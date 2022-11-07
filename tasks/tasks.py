@@ -17,7 +17,7 @@ http_client.mount("http://", adapter)
 
 @celery.task(ignore_result=True, acks_late=True)
 def do_task(message):
-    url = "https://localhost:24006/jstor_publisher/do_task"
+    url = "https://localhost:8081/jstor_publisher/do_task"
     celeryapp.execute.send_task("tasks.tasks.do_task", args=[message], kwargs={}, queue=os.getenv('NEXT_QUEUE_NAME'))
     response = http_client.post(url, json = message, verify=False)
     return response.json()
