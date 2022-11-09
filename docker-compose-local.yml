@@ -1,0 +1,29 @@
+# Build all images and run all containers
+# `docker-compose -f docker-compose-local.yml up -d --build --force-recreate`
+
+version: '3.7'
+
+services:
+
+  jstor-publisher:
+    container_name: 'jstor-publisher'
+    build:
+      context: './'
+      dockerfile: './DockerfileLocal'
+    volumes:
+      - './:/home/jstorforumadm'
+    env_file:
+      - '.env'
+    environment:
+      QUEUE_NAME: third_queue
+      NEXT_QUEUE_NAME: final_queue
+    ports:
+      # Worker API
+      - '24008:8081'
+    networks:
+      - jstorforum-net
+
+# Create a custom docker network if it does not exist already
+networks:
+  jstorforum-net:
+    name: jstorforum-net
