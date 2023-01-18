@@ -15,8 +15,8 @@ services:
     env_file:
       - '.env'
     environment:
-      QUEUE_NAME: third_queue
-      NEXT_QUEUE_NAME: final_queue
+      QUEUE_NAME: publish_jstorforum_itest
+      NEXT_QUEUE_NAME: completed_jstorforum_itest
     ports:
       # Worker API
       - '25002:8081'
