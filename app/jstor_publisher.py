@@ -57,7 +57,9 @@ Update job timestamp file"""
         current_app.logger.info("json message: " + json.dumps(request_json))
 
         #integration test: write small record to mongo to prove connectivity
-        integration_test = request_json['integration_test']
+        integration_test = False
+        if ('integration_test' in request_json):
+            integration_test = request_json['integration_test']
         if (integration_test):
             current_app.logger.info("running integration test")
             try:
