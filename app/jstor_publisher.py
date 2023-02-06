@@ -1,4 +1,4 @@
-import sys, os, os.path, json, requests, traceback, time
+import sys, os, os.path, json, requests, traceback, time, boto3
 from tenacity import retry, retry_if_result, wait_random_exponential, retry_if_not_exception_type
 from datetime import datetime
 from flask import Flask, request, jsonify, current_app, make_response
@@ -14,6 +14,44 @@ class JstorPublisher():
         self.parent_job_ticket_id = None
         self.child_error_count = 0
         self.max_child_errors = int(os.getenv("CHILD_ERROR_LIMIT", 10))
+        self.via_access_key = os.environ.get('S3_VIA_ACCESS_KEY')
+        self.via_secret_key = os.environ.get('S3_VIA_SECRET_KEY')
+        self.via_bucket_name = os.environ.get('S3_VIA_BUCKET')
+        self.via_s3_endpoint = os.environ.get('S3_VIA_ENDPOINT')
+        self.via_s3_region = os.environ.get('S3_VIA_REGION')
+        self.via_s3_resource = None
+        self.via_s3_bucket = None
+        self.ssio_access_key = os.environ.get('S3_SSIO_ACCESS_KEY')
+        self.ssio_secret_key = os.environ.get('S3_SSIO_SECRET_KEY')
+        self.ssio_bucket_name = os.environ.get('S3_SSIO_BUCKET')
+        self.ssio_s3_endpoint = os.environ.get('S3_SSIO_ENDPOINT')
+        self.ssio_s3_region = os.environ.get('S3_SSIO_REGION')
+        self.ssio_s3_resource = None
+        self.ssio_s3_bucket = None
+        self.aspace_access_key = os.environ.get('S3_ASPACE_ACCESS_KEY')
+        self.aspace_secret_key = os.environ.get('S3_ASPACE_SECRET_KEY')
+        self.aspace_bucket_name = os.environ.get('S3_ASPACE_BUCKET')
+        self.aspace_s3_endpoint = os.environ.get('S3_ASPACE_ENDPOINT')
+        self.aspace_s3_region = os.environ.get('S3_ASPACE_REGION')
+        self.aspace_s3_resource = None
+        self.aspace_s3_bucket = None
+        self.connect_to_buckets()
+        
+    def connect_to_buckets(self):
+        """
+            Connect to the via, ssio, & aspace s3 buckets
+        """
+        via_boto_session = boto3.Session(aws_access_key_id=self.via_access_key, aws_secret_access_key=self.via_secret_key)
+        self.via_s3_resource = via_boto_session.resource('s3')
+        self.via_s3_bucket = self.via_s3_resource.Bucket(self.via_bucket_name)
+
+        ssio_boto_session = boto3.Session(aws_access_key_id=self.ssio_access_key, aws_secret_access_key=self.ssio_secret_key)
+        self.ssio_s3_resource = ssio_boto_session.resource('s3')
+        self.ssio_s3_bucket = self.ssio_s3_resource.Bucket(self.ssio_bucket_name)
+
+        aspace_boto_session = boto3.Session(aws_access_key_id=self.aspace_access_key, aws_secret_access_key=self.aspace_secret_key)
+        self.aspace_s3_resource = aspace_boto_session.resource('s3')
+        self.aspace_s3_bucket = self.aspace_s3_resource.Bucket(self.aspace_bucket_name)
 
     # Write to error log update result and update job tracker file
     def handle_errors(self, result, error_msg, exception_msg = None, set_job_failed = False):
@@ -53,6 +91,13 @@ Update job timestamp file"""
         current_app.logger.info("Sleep " + str(sleep_s) + "seconds")
         sleep(sleep_s)
 
+        jstorforum = False
+        if 'jstorforum' in request_json:
+            current_app.logger.info("running jstorforum harvest")
+            jstorforum = request_json['jstorforum']
+        if jstorforum:
+            self.do_publish()
+
         #dump json
         current_app.logger.info("json message: " + json.dumps(request_json))
 
@@ -62,6 +107,10 @@ Update job timestamp file"""
             integration_test = request_json['integration_test']
         if (integration_test):
             current_app.logger.info("running integration test")
+            try:
+                self.do_publish(itest=True)
+            except Exception as err:
+                current_app.logger.error("Error: unable to publish records, {}", err)
             try:
                 mongo_url = os.environ.get('MONGO_URL')
                 mongo_dbname = os.environ.get('MONGO_DBNAME')
@@ -79,6 +128,47 @@ Update job timestamp file"""
                 current_app.logger.error("Error: unable to connect to mongodb, {}", err)
         
         return result
+
+    def do_publish(self, itest=False):
+        if itest:
+            configfile = "/home/jstorforumadm/harvestjobs_test.json"
+        else:
+           configfile = "/home/jstorforumadm/harvestjobs.json"
+        current_app.logger.info("configfile: " + configfile)
+        harvjobsjson = None
+        with open(configfile) as f:
+            harvjobsjson = f.read()
+        harvestconfig = json.loads(harvjobsjson)
+        current_app.logger.info("harvestconfig: " + harvestconfig)
+        harvestDir = os.getenv("JSTOR_HARVEST_DIR")        
+        transformDir = os.getenv("JSTOR_TRANSFORM_DIR")
+        directories = [harvestDir, transformDir]
+
+        #publish
+        current_app.logger.info("publishing to S3")
+        for baseDir in directories:
+            for job in harvestconfig:     
+                if job["jobName"] == "jstorforum":   
+                    for set in job["harvests"]["sets"]:
+                        setSpec = "{}".format(set["setSpec"])
+                        opDir = set["opDir"]
+                        currentPath = baseDir + "/" + opDir
+                        current_app.logger.info("looking in current path:" + currentPath)
+                        if os.path.exists(currentPath):
+                            if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
+                                current_app.logger.info("Publishing set:" + setSpec)
+                                for filename in os.listdir(bcurrentPath):
+                                    try:
+                                        filepath = currentPath + "/" + filename
+                                        s3prefix = opDir + "/"
+                                        current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename) 
+                                        self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                    except Exception as err:
+                                        current_app.logger.error("Publishing error: {}", err)
+        return
+                                            
+
+
 
     def revert_task(self, job_ticket_id, task_name):
         return True
