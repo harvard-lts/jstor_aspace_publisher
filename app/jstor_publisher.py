@@ -132,9 +132,9 @@ Update job timestamp file"""
 
     def do_publish(self, itest=False):
         if itest:
-            configfile = "/home/jstorforumadm/harvestjobs_test.json"
+            configfile = os.getenv("JSTOR_HARVEST_TEST_CONFIG")
         else:
-            configfile = "/home/jstorforumadm/harvestjobs.json"
+            configfile = os.getenv("JSTOR_HARVEST_CONFIG")
         current_app.logger.info("configfile: " + configfile)
         with open(configfile) as f:
             harvjobsjson = f.read()
@@ -159,8 +159,12 @@ Update job timestamp file"""
                                     try:
                                         filepath = currentPath + "/" + filename
                                         s3prefix = opDir + "/"
-                                        current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename) 
-                                        self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                        if (baseDir == harvestDir):  #send to SSIO bucket
+                                            current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
+                                            self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                        elif (baseDir == transformDir):  #send to VIA bucket
+                                        current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
+                                            self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                     except Exception as err:
                                         current_app.logger.error("Publishing error: {}", err)
                                             
