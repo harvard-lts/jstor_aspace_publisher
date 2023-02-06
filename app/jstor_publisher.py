@@ -163,7 +163,7 @@ Update job timestamp file"""
                                             current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
                                             self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
                                         elif (baseDir == transformDir):  #send to VIA bucket
-                                        current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
+                                            current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                             self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                     except Exception as err:
                                         current_app.logger.error("Publishing error: {}", err)
