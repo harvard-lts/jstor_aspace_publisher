@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify, current_app, make_response
 from random import randint
 from time import sleep
 from pymongo import MongoClient
+import fnmatch
 
 class JstorPublisher():
     def __init__(self):
@@ -108,7 +109,7 @@ Update job timestamp file"""
         if (integration_test):
             current_app.logger.info("running integration test")
             try:
-                self.do_publish(itest=True)
+                self.do_publish(True)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish records, {}", err)
             try:
@@ -133,17 +134,14 @@ Update job timestamp file"""
         if itest:
             configfile = "/home/jstorforumadm/harvestjobs_test.json"
         else:
-           configfile = "/home/jstorforumadm/harvestjobs.json"
+            configfile = "/home/jstorforumadm/harvestjobs.json"
         current_app.logger.info("configfile: " + configfile)
-        harvjobsjson = None
         with open(configfile) as f:
             harvjobsjson = f.read()
         harvestconfig = json.loads(harvjobsjson)
-        current_app.logger.info("harvestconfig: " + harvestconfig)
         harvestDir = os.getenv("JSTOR_HARVEST_DIR")        
         transformDir = os.getenv("JSTOR_TRANSFORM_DIR")
         directories = [harvestDir, transformDir]
-
         #publish
         current_app.logger.info("publishing to S3")
         for baseDir in directories:
@@ -153,11 +151,11 @@ Update job timestamp file"""
                         setSpec = "{}".format(set["setSpec"])
                         opDir = set["opDir"]
                         currentPath = baseDir + "/" + opDir
-                        current_app.logger.info("looking in current path:" + currentPath)
+                        current_app.logger.info("looking in current path: " + currentPath)
                         if os.path.exists(currentPath):
                             if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
-                                current_app.logger.info("Publishing set:" + setSpec)
-                                for filename in os.listdir(bcurrentPath):
+                                current_app.logger.info("Publishing set: " + opDir)
+                                for filename in os.listdir(currentPath):
                                     try:
                                         filepath = currentPath + "/" + filename
                                         s3prefix = opDir + "/"
@@ -165,7 +163,6 @@ Update job timestamp file"""
                                         self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                     except Exception as err:
                                         current_app.logger.error("Publishing error: {}", err)
-        return
                                             
 
 
