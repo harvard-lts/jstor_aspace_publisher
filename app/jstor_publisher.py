@@ -108,7 +108,7 @@ Update job timestamp file"""
             current_app.logger.info("running aspace transform")
             aspace = request_json['aspace']
         if aspace:
-            self.do_transform('aspace')
+            self.do_publish('aspace')
 
         #dump json
         current_app.logger.info("json message: " + json.dumps(request_json))
