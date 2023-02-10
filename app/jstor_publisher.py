@@ -169,7 +169,7 @@ Update job timestamp file"""
                                 current_app.logger.info("Publishing set: " + opDir)
                                 for filename in os.listdir(currentPath):
                                     try:
-                                        filepath = currentPath + filename
+                                        filepath = currentPath + "/" + filename
                                         s3prefix = opDir + "/"
                                         if (baseDir == harvestDir):  #send to SSIO bucket
                                             current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
@@ -186,7 +186,7 @@ Update job timestamp file"""
                             current_app.logger.info("Publishing to Aspace S3")
                             for filename in os.listdir(aspaceDir):
                                 try:
-                                    filepath = aspaceDir + filename
+                                    filepath = aspaceDir + "/" + filename
                                     current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
                                     self.aspace_s3_bucket.upload_file(filepath, filename)
                                 except Exception as err:
