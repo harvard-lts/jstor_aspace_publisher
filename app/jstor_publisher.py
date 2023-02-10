@@ -102,6 +102,13 @@ Update job timestamp file"""
             jstorforum = request_json['jstorforum']
         if jstorforum:
             self.do_publish()
+        
+        aspace = False
+        if 'aspace' in request_json:
+            current_app.logger.info("running aspace transform")
+            aspace = request_json['aspace']
+        if aspace:
+            self.do_transform('aspace')
 
         #dump json
         current_app.logger.info("json message: " + json.dumps(request_json))
@@ -162,7 +169,7 @@ Update job timestamp file"""
                                 current_app.logger.info("Publishing set: " + opDir)
                                 for filename in os.listdir(currentPath):
                                     try:
-                                        filepath = currentPath + "/" + filename
+                                        filepath = currentPath + filename
                                         s3prefix = opDir + "/"
                                         if (baseDir == harvestDir):  #send to SSIO bucket
                                             current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
@@ -172,17 +179,18 @@ Update job timestamp file"""
                                             self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                     except Exception as err:
                                         current_app.logger.error("VIA/SSIO Publishing error: {}", err)
-        #publish to Aspace                      
-        if os.path.exists(aspaceDir):
-            if len(fnmatch.filter(os.listdir(aspaceDir), '*.xml')) > 0:
-                current_app.logger.info("Publishing to Aspace S3")
-                for filename in os.listdir(aspaceDir):
-                    try:
-                        filepath = aspaceDir + "/" + filename
-                        current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
-                        self.aspace_s3_bucket.upload_file(filepath, filename)
-                    except Exception as err:
-                        current_app.logger.error("Aspace Publishing error: {}", err)
+                #publish to Aspace
+                if job["jobName"] == "aspace":                      
+                    if os.path.exists(aspaceDir):
+                        if len(fnmatch.filter(os.listdir(aspaceDir), '*.xml')) > 0:
+                            current_app.logger.info("Publishing to Aspace S3")
+                            for filename in os.listdir(aspaceDir):
+                                try:
+                                    filepath = aspaceDir + filename
+                                    current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
+                                    self.aspace_s3_bucket.upload_file(filepath, filename)
+                                except Exception as err:
+                                    current_app.logger.error("Aspace Publishing error: {}", err)
 
     def revert_task(self, job_ticket_id, task_name):
         return True
