@@ -96,19 +96,23 @@ Update job timestamp file"""
         current_app.logger.info("Sleep " + str(sleep_s) + "seconds")
         sleep(sleep_s)
 
+        harvestset = None
+        if 'harvestset' in request_json:
+            harvestset = request_json["harvestset"]
+
         jstorforum = False
         if 'jstorforum' in request_json:
-            current_app.logger.info("running jstorforum harvest")
+            current_app.logger.info("running jstorforum publisher")
             jstorforum = request_json['jstorforum']
         if jstorforum:
-            self.do_publish()
+            self.do_publish('jstorforum', harvestset)
         
         aspace = False
         if 'aspace' in request_json:
             current_app.logger.info("running aspace transform")
             aspace = request_json['aspace']
         if aspace:
-            self.do_publish('aspace')
+            self.do_publish('aspace', None)
 
         #dump json
         current_app.logger.info("json message: " + json.dumps(request_json))
@@ -120,7 +124,8 @@ Update job timestamp file"""
         if (integration_test):
             current_app.logger.info("running integration test")
             try:
-                self.do_publish(True)
+                self.do_publish('jstorforum', None, True)
+                self.do_publish('aspace', None, True)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish records, {}", err)
             try:
@@ -141,7 +146,7 @@ Update job timestamp file"""
         
         return result
 
-    def do_publish(self, itest=False):
+    def do_publish(self, jobname, harvestset, itest=False):
         if itest:
             configfile = os.getenv("JSTOR_HARVEST_TEST_CONFIG")
         else:
@@ -158,29 +163,49 @@ Update job timestamp file"""
         current_app.logger.info("publishing to S3")
         for baseDir in directories:
             for job in harvestconfig:     
-                if job["jobName"] == "jstorforum":   
+                if jobname == 'jstorforum' and jobname == job["jobName"]:     
                     for set in job["harvests"]["sets"]:
                         setSpec = "{}".format(set["setSpec"])
                         opDir = set["opDir"]
                         currentPath = baseDir + "/" + opDir
-                        current_app.logger.info("looking in current path: " + currentPath)
-                        if os.path.exists(currentPath):
-                            if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
-                                current_app.logger.info("Publishing set: " + opDir)
-                                for filename in os.listdir(currentPath):
-                                    try:
-                                        filepath = currentPath + "/" + filename
-                                        s3prefix = opDir + "/"
-                                        if (baseDir == harvestDir):  #send to SSIO bucket
-                                            current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
-                                            self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
-                                        elif (baseDir == transformDir):  #send to VIA bucket
-                                            current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
-                                            self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
-                                    except Exception as err:
-                                        current_app.logger.error("VIA/SSIO Publishing error: {}", err)
+                        if harvestset is None:
+                            current_app.logger.info("looking in current path: " + currentPath)
+                            if os.path.exists(currentPath):
+                                if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
+                                    current_app.logger.info("Publishing set: " + opDir)
+                                    for filename in os.listdir(currentPath):
+                                        try:
+                                            filepath = currentPath + "/" + filename
+                                            s3prefix = opDir + "/"
+                                            if (baseDir == harvestDir):  #send to SSIO bucket
+                                                current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
+                                                self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                            elif (baseDir == transformDir):  #send to VIA bucket
+                                                current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
+                                                self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                        except Exception as err:
+                                            current_app.logger.error("VIA/SSIO Publishing error: {}", err)
+                        elif  setSpec == harvestset: 
+                            current_app.logger.info("Publishing for only one set: " + setSpec)
+                            current_app.logger.info("looking in current path: " + currentPath)
+                            if os.path.exists(currentPath):
+                                if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
+                                    current_app.logger.info("Publishing set: " + opDir)
+                                    for filename in os.listdir(currentPath):
+                                        try:
+                                            filepath = currentPath + "/" + filename
+                                            s3prefix = opDir + "/"
+                                            if (baseDir == harvestDir):  #send to SSIO bucket
+                                                current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
+                                                self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                            elif (baseDir == transformDir):  #send to VIA bucket
+                                                current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
+                                                self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                        except Exception as err:
+                                            current_app.logger.error("VIA/SSIO Publishing error: {}", err)        
+
                 #publish to Aspace
-                if job["jobName"] == "aspace":                      
+                if jobname == 'aspace' and jobname == job["jobName"]:                       
                     if os.path.exists(aspaceDir):
                         if len(fnmatch.filter(os.listdir(aspaceDir), '*.xml')) > 0:
                             current_app.logger.info("Publishing to Aspace S3")
