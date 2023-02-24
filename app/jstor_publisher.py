@@ -154,6 +154,8 @@ Update job timestamp file"""
         transformDir = os.getenv("JSTOR_TRANSFORM_DIR")
         aspaceDir = os.getenv("JSTOR_ASPACE_DIR")
         directories = [harvestDir, transformDir]
+        totalPublished = 0
+        totalPublishedAdded = 0
         #publish to VIA and SSIO
         current_app.logger.info("publishing to S3")
         for baseDir in directories:
@@ -174,9 +176,11 @@ Update job timestamp file"""
                                         if (baseDir == harvestDir):  #send to SSIO bucket
                                             current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
                                             self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                            #update record in mongo
                                         elif (baseDir == transformDir):  #send to VIA bucket
                                             current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                             self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                            #update record in mongo
                                     except Exception as err:
                                         current_app.logger.error("VIA/SSIO Publishing error: {}", err)
                 #publish to Aspace
@@ -189,6 +193,7 @@ Update job timestamp file"""
                                     filepath = aspaceDir + "/" + filename
                                     current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
                                     self.aspace_s3_bucket.upload_file(filepath, filename)
+                                    #update record in mongo
                                 except Exception as err:
                                     current_app.logger.error("Aspace Publishing error: {}", err)
 
