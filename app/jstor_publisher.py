@@ -122,7 +122,7 @@ Update job timestamp file"""
                     self.do_publish('jstorforum', None, True)
                 else:
                     self.do_publish('jstorforum', harvestset)
-                except Exception as err:
+            except Exception as err:
                     current_app.logger.error("Error: unable to publish jstorforum records, {}", err)
 
         aspace = False
