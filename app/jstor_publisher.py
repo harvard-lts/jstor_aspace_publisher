@@ -118,12 +118,9 @@ Update job timestamp file"""
             jstorforum = request_json['jstorforum']
         if jstorforum:
             try:
-                if (integration_test):
-                    self.do_publish('jstorforum', None, True)
-                else:
-                    self.do_publish('jstorforum', harvestset)
+                self.do_publish('jstorforum', harvestset, job_ticket_id)
             except Exception as err:
-                    current_app.logger.error("Error: unable to publish jstorforum records, {}", err)
+                current_app.logger.error("Error: unable to publish jstorforum records, {}", err)
 
         aspace = False
         if 'aspace' in request_json:
@@ -131,10 +128,7 @@ Update job timestamp file"""
             aspace = request_json['aspace']
         if aspace:
             try:
-                if (integration_test):
-                    self.do_publish('aspace', None, True)
-                else:
-                    self.do_publish('aspace', None)
+                self.do_publish('aspace', None, job_ticket_id)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish aspace records, {}", err)
 
@@ -145,6 +139,17 @@ Update job timestamp file"""
             integration_test = request_json['integration_test']
         if (integration_test):
             current_app.logger.info("running integration test")
+
+            try:
+                self.do_publish('jstorforum', harvestset, job_ticket_id, True)
+            except Exception as err:
+                current_app.logger.error("Error: unable to publish jstorforum records in itest, {}", err)
+
+            try:
+                self.do_publish('aspace', None, job_ticket_id, True)
+            except Exception as err:
+                current_app.logger.error("Error: unable to publish aspace records in itest, {}", err)
+            
             try:
                 mongo_url = os.environ.get('MONGO_URL')
                 mongo_dbname = os.environ.get('MONGO_DBNAME')
@@ -163,7 +168,7 @@ Update job timestamp file"""
         
         return result
 
-    def do_publish(self, jobname, harvestset, itest=False):
+    def do_publish(self, jobname, harvestset, job_ticket_id, itest=False):
         if itest:
             configfile = os.getenv("JSTOR_HARVEST_TEST_CONFIG")
         else:
@@ -178,9 +183,9 @@ Update job timestamp file"""
         directories = [harvestDir, transformDir]
         mongo_url = os.environ.get('MONGO_URL')
         mongo_dbname = os.environ.get('MONGO_DBNAME')
-        harvest_collection_name = os.environ.get('HARVEST_COLLECTION', 'jstor_harvests')
+        harvest_collection_name = os.environ.get('HARVEST_COLLECTION', 'jstor_published_summary')
         repository_collection_name = os.environ.get('REPOSITORY_COLLECTION', 'jstor_repositories')
-        record_collection_name = os.environ.get('RECORD_COLLECTION', 'jstor_records')
+        record_collection_name = os.environ.get('JSTOR_PUBLISHED_RECORDS', 'jstor_published_records')
         mongo_url = os.environ.get('MONGO_URL')
         mongo_client = None
         mongo_db = None
@@ -191,11 +196,12 @@ Update job timestamp file"""
             current_app.logger.error("Error: unable to connect to mongodb, {}", err)
 
         #publish to VIA and SSIO
-        current_app.logger.info("publishing to S3")
+        current_app.logger.info("Publishing to S3")
         for baseDir in directories:
             for job in harvestconfig:     
-                if jobname == 'jstorforum' and jobname == job["jobName"]:     
+                if jobname == 'jstorforum' and jobname == job["jobName"]:    
                     for set in job["harvests"]["sets"]:
+                        publish_successful = True 
                         setSpec = "{}".format(set["setSpec"])
                         repository_name = self.repositories[setSpec]
                         opDir = set["opDir"]
@@ -208,28 +214,40 @@ Update job timestamp file"""
                                 if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
                                     current_app.logger.info("Publishing set: " + opDir)
                                     for filename in os.listdir(currentPath):
+                                        identifier = filename[:-4]
+                                        destination = "VIA/SSIO"
                                         try:
                                             filepath = currentPath + "/" + filename
                                             s3prefix = opDir + "/"
                                             if (baseDir == harvestDir):  #send to SSIO bucket
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
                                                 self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                                destination = "SSIO"
                                             elif (baseDir == transformDir):  #send to VIA bucket
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                                destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
                                             #write/update record
                                             try:
                                                 status = "update"
-                                                identifier = filename[:4]
+                                                success = True
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
-                                                    status, record_collection_name, mongo_db)
-                                                totalPublishCount = totalPublishCount + 1    
+                                                    status, record_collection_name, success, destination, mongo_db)   
                                             except Exception as e:
                                                 current_app.logger.error(e)
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
                                         except Exception as err:
                                             current_app.logger.error("VIA/SSIO Publishing error: {}", err)
+                                            publish_successful = False
+                                            try:
+                                                status = "update"
+                                                success = False
+                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
+                                                    status, record_collection_name, success, destination, mongo_db, err)    
+                                            except Exception as e:
+                                                current_app.logger.error(e)
+                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
                         elif  setSpec == harvestset: 
                             current_app.logger.info("Publishing for only one set: " + setSpec)
                             current_app.logger.info("looking in current path: " + currentPath)
@@ -237,72 +255,123 @@ Update job timestamp file"""
                                 if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
                                     current_app.logger.info("Publishing set: " + opDir)
                                     for filename in os.listdir(currentPath):
+                                        identifier = filename[:-4]
+                                        destination = "VIA/SSIO"
                                         try:
                                             filepath = currentPath + "/" + filename
                                             s3prefix = opDir + "/"
                                             if (baseDir == harvestDir):  #send to SSIO bucket
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the SSIO bucket") 
                                                 self.ssio_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                                destination = "SSIO"
                                             elif (baseDir == transformDir):  #send to VIA bucket
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
+                                                destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
                                             #write/update record
                                             try:
                                                 status = "update"
-                                                identifier = filename[:4]
+                                                success = True
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
-                                                    status, record_collection_name, mongo_db)
-                                                totalPublishCount = totalPublishCount + 1    
+                                                    status, record_collection_name, success, destination, mongo_db)  
                                             except Exception as e:
                                                 current_app.logger.error(e)
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
                                         except Exception as err:
-                                            current_app.logger.error("VIA/SSIO Publishing error: {}", err)     
+                                            current_app.logger.error("VIA/SSIO Publishing error: {}", err)
+                                            publish_successful = False
+                                            #log error to mongo
+                                            try:
+                                                status = "update"
+                                                success = False
+                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
+                                                    status, record_collection_name, success, destination, mongo_db, err)   
+                                            except Exception as e:
+                                                current_app.logger.error(e)
+                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)     
                         #update harvest record
                         try:
-                            self.update_harvest(job_ticket_id, harvestdate, setSpec, 
-                                repository_name, totalPublishCount, harvest_collection_name, mongo_db)
+                            self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                repository_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
                         except Exception as e:
                             current_app.logger.error(e)
                             current_app.logger.error("Mongo error writing harvest record for : " +  setSpec)   
 
-                #publish to Aspace
-                if jobname == 'aspace' and jobname == job["jobName"]:                       
-                    harvestdate = datetime.today().strftime('%Y-%m-%d')
-                    totalPublishCount = 0 
-                    if os.path.exists(aspaceDir):
-                        if len(fnmatch.filter(os.listdir(aspaceDir), '*.xml')) > 0:
-                            current_app.logger.info("Publishing to Aspace S3")
-                            for filename in os.listdir(aspaceDir):
-                                try:
-                                    filepath = aspaceDir + "/" + filename
-                                    current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
-                                    self.aspace_s3_bucket.upload_file(filepath, filename)
-                                    totalPublishCount = totalPublishCount + 1
-                                    #write/update record
-                                    try:
-                                        status = "update"
-                                        identifier = filename[:4]
-                                        self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
-                                            status, record_collection_name, mongo_db)
-                                        totalPublishCount = totalPublishCount + 1    
-                                    except Exception as e:
-                                                current_app.logger.error(e)
-                                                current_app.logger.error("Mongo error writing aspace record: " +  identifier)
-                                except Exception as err:
-                                    current_app.logger.error("Aspace Publishing error: {}", err)
+        #publish to Aspace
+        #if jobname == 'aspace' and jobname == job["jobName"]:  
+        if  ((jobname == 'aspace') and (any('aspace' in job["jobName"] for job in harvestconfig))):                     
+            harvestdate = datetime.today().strftime('%Y-%m-%d')
+            totalPublishCount = 0
+            publish_successful = True
+            if os.path.exists(aspaceDir):
+                if len(fnmatch.filter(os.listdir(aspaceDir), '*.xml')) > 0:
+                    current_app.logger.info("Publishing to Aspace S3")
+                    destination = "Aspace"
+                    for filename in os.listdir(aspaceDir):
+                        identifier = filename[:-4]
+                        try:
+                            filepath = aspaceDir + "/" + filename
+                            current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
+                            self.aspace_s3_bucket.upload_file(filepath, filename)
+                            totalPublishCount = totalPublishCount + 1
+                            #write/update record
+                            try:
+                                status = "update"
+                                success = True
+                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
+                                    status, record_collection_name, success, destination, mongo_db)   
+                            except Exception as e:
+                                current_app.logger.error(e)
+                                current_app.logger.error("Mongo error writing aspace record: " +  identifier)
+                        except Exception as err:
+                            current_app.logger.error("Aspace Publishing error: {}", err)
+                            publish_successful = False
+                            #log error to mongo
+                            try:
+                                status = "update"
+                                success = False
+                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
+                                    status, record_collection_name, success, destination, mongo_db, err)  
+                            except Exception as e:
+                                current_app.logger.error(e)
+                                current_app.logger.error("Mongo error writing aspace record " +  identifier + ": {}", e)
+            #update harvest record
+            try:
+                self.write_harvest(job_ticket_id, harvestdate, "0000", 
+                    "aspace", totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+            except Exception as e:
+                current_app.logger.error(e)
+                current_app.logger.error("Mongo error writing harvest record for: aspace")
 
-                    #update harvest record
-                    try:
-                        self.update_harvest(job_ticket_id, harvestdate, "0000", 
-                            "aspace", totalHarvestCount, harvest_collection_name, mongo_db)
-                    except Exception as e:
-                        current_app.logger.error(e)
-                        current_app.logger.error("Mongo error writing harvest record for: aspace")
+        if (mongo_client is not None):            
+            mongo_client.close()
     
-    def update_harvest(self, harvest_id, harvest_date, repository_id, repository_name,
-            total_published, collection_name, mongo_db):
+    def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name,
+            status, collection_name, success, destination, mongo_db, error=None):
+        if mongo_db == None:
+            current_app.logger.info("Error: mongo db not instantiated")
+            return
+        try:
+            err_msg = ""
+            if error != None:
+                    err_msg = error
+            if harvest_date == None: #set harvest date to today if harvest date is None
+                harvest_date = datetime.today().strftime('%Y-%m-%d')  
+            harvest_date_obj = datetime.strptime(harvest_date, "%Y-%m-%d")
+            harvest_record = { "harvest_id": harvest_id, "last_update": harvest_date_obj, "record_id": record_id, 
+                "repository_id": repository_id, "repository_name": repository_name, 
+                "status": status, "success": success, "destination": destination, "error": err_msg } 
+            record_collection = mongo_db[collection_name]
+            record_collection.insert_one(harvest_record)
+            #record_collection.update_one(query, harvest_record, upsert=True)
+            current_app.logger.info("record " + str(record_id) + " of repo " + str(repository_id) + " written to mongo ")
+        except Exception as err:
+            current_app.logger.info("Error: unable to connect to mongodb, {}", err)
+        return
+    
+    def write_harvest(self, harvest_id, harvest_date, repository_id, repository_name,
+            total_published, collection_name, mongo_db, jobname, success):
         if mongo_db == None:
             current_app.logger.info("Error: mongo db not instantiated")
             return
@@ -310,13 +379,11 @@ Update job timestamp file"""
             if harvest_date == None: #set harvest date to today if harvest date is None
                 harvest_date = datetime.today().strftime('%Y-%m-%d') 
             harvest_date_obj = datetime.strptime(harvest_date, "%Y-%m-%d")
-            query = { "id" : harvest_id }
-            harvest_record = {"$set": { "id": harvest_id, "harvest_date": harvest_date_obj, 
+            harvest_record = { "id": harvest_id, "harvest_date": harvest_date_obj, 
                 "repository_id": repository_id, "repository_name": repository_name, 
-                "total_published_count": total_published, "success": True } }
+                "total_published_count": total_published, "success": success, "jobname": jobname }
             harvest_collection = mongo_db[collection_name]
-            #harvest_collection.insert_one(harvest_record)
-            harvest_collection.update_one(query, harvest_record, upsert=True)
+            harvest_collection.insert_one(harvest_record)
             current_app.logger.info(repository_name + " harvest for " + harvest_date + " written to mongo ")
         except Exception as err:
             current_app.logger.info("Error: unable to connect to mongodb, {}", err)
