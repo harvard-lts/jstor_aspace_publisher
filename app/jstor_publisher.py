@@ -12,11 +12,7 @@ transform_ignore_dirs = (os.environ.get('TRANSFORM_IGNORE_DIRS','')).split(',')
 ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
 concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforum/ltstools/bin/concat-files.sh')
 via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforum/ltstools/via/bin/via_export.py')
-via_script_config = os.environ.get('VIA_SCRIPT_CONFIG','/home/jstorforum/ltstools/via/conf/via_export.yaml')
 weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforum/ltstools/bin/weed_files.py')
-weed_script_config = os.environ.get('WEED_SCRIPT_CONFIG','/home/jstorforum/ltstools/conf/weed_files.yaml')
-primo_incr_log = os.environ.get('PRIMO_INCR_LOG','/home/jstorforum/logs/jstor_publisher/primo_export_incr.log')
-lc_incr_log = os.environ.get('LC_INCR_LOG', '/home/jstorforum/logs/jstor_publisher/lc_export_incr.log')
 publish_to_primo = os.environ.get('PUBLISH_PRIMO', False)
 publish_to_lc = os.environ.get('PUBLISH_LC', False)
 
