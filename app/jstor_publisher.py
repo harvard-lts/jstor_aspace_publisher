@@ -10,9 +10,9 @@ import fnmatch
 harvest_ignore_dirs = (os.environ.get('HARVEST_IGNORE_DIRS','')).split(',')
 transform_ignore_dirs = (os.environ.get('TRANSFORM_IGNORE_DIRS','')).split(',')
 ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
-concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforum/ltstools/bin/concat-files.sh')
-via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforum/ltstools/via/bin/via_export.py')
-weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforum/ltstools/bin/weed_files.py')
+concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
+via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
+weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
 publish_to_primo = os.environ.get('PUBLISH_PRIMO', False)
 publish_to_lc = os.environ.get('PUBLISH_LC', False)
 
