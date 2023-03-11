@@ -13,6 +13,7 @@ ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
 concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
 via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
 weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
+weed_files_flag = os.environ.get('WEED_FILES', False)
 publish_to_primo = os.environ.get('PUBLISH_PRIMO', False)
 publish_to_lc = os.environ.get('PUBLISH_LC', False)
 
@@ -172,10 +173,11 @@ Update job timestamp file"""
                 current_app.logger.error("Error: unable to connect to mongodb, {}", err)
 
         #call weed files script
-        if (self.weed_files()):
-            current_app.logger.info("weeding files successful")
-        else:
-            current_app.logger.error("weeding files failed")
+        if (weed_files_flag):
+            if (self.weed_files()):
+                current_app.logger.info("weeding files successful")
+            else:
+                current_app.logger.error("weeding files failed")
         
         return result
 
