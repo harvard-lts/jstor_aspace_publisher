@@ -170,6 +170,12 @@ Update job timestamp file"""
                 mongo_client.close()
             except Exception as err:
                 current_app.logger.error("Error: unable to connect to mongodb, {}", err)
+
+        #call weed files script
+        if (self.weed_files()):
+            current_app.logger.info("weeding files successful")
+        else:
+            current_app.logger.error("weeding files failed")
         
         return result
 
@@ -404,6 +410,11 @@ Update job timestamp file"""
                 lcPublishSuccess = self.export_files("incr", "lc")
             else:
                 current_app.logger.info("Publish to Librarycloud skipped")
+        else:
+            if (not publish_to_lc):
+                current_app.logger.info("Publish to LC skipped")
+            if (not publish_to_primo):
+                current_app.logger.info("Publish to Primo skipped")
 
         #update mongo with librarycloud and primo record lists
         for primoRec in primoIds:
@@ -411,6 +422,8 @@ Update job timestamp file"""
                 error = None
                 if (not primoPublishSuccess):
                     error = "export failed"
+                if (not publish_to_primo):
+                    error = "not exported"
                 self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
                     primoRec["setSpec"], primoRec["repository_name"], "update", 
                     record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
@@ -423,18 +436,15 @@ Update job timestamp file"""
                 error = None
                 if (not lcPublishSuccess):
                     error = "export failed"
+                if (not publish_to_lc):
+                    error = "not exported"
                 self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
                     lcRec["setSpec"], lcRec["repository_name"], "update", 
                     record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
             except Exception as e:
                 current_app.logger.error(e)
                 current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
-        
-        #call weed files script
-        if (self.weed_files()):
-            current_app.logger.info("weeding files successful")
-        else:
-            current_app.logger.error("weeding files failed")
+                
     
     def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name,
             status, collection_name, success, destination, mongo_db, error=None):
@@ -504,17 +514,10 @@ Update job timestamp file"""
     def concat_files(self):
         #concatenate files for primo andlibrarycloud
         try:
-            sp = subprocess.call([concat_script_path], 
-                capture_output=True, text=True, check=True, stderr=subprocess.STDOUT)
-            if ((sp.stdout != None) and (sp.stdout.strip() != "" )): # error
-                #current_app.logger.error("File concatenation failed: {}", sp.stdout.strip())
-                current_app.logger.error("File concatenation failed, Primo and LC publish aborted")
-                return False
-            else:
-                return True
+            subprocess.check_call([concat_script_path])
+            return True
         except Exception as e:
-            current_app.logger.error("File concatenation failed: {}", e)
-            current_app.logger.error("Primo and LC publish aborted")
+            current_app.logger.error("File concatenation failed: Primo and LC publish aborted")
             return False
 
     def export_files(self, size, dest):
@@ -535,8 +538,7 @@ Update job timestamp file"""
     def weed_files(self):
         #call weed files script
         try:
-            sp = subprocess.call([weed_script_path], 
-                capture_output=True, text=True, check=True, stderr=subprocess.STDOUT)
+            subprocess.check_call([weed_script_path])
             return True
         except Exception as e:
             current_app.logger.error("Delete script error: {}", e)
