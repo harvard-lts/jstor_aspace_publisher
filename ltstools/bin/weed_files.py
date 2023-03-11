@@ -70,7 +70,7 @@ def main():
 		notifyJM = notify('echo', jobCode)
 		notifyJM.log('pass', f'Check configuration file {confFile}', verbose)
 	else:
-		notifyJM = notify('monitor+log', jobCode, logFile)
+		notifyJM = notify('log', jobCode, logFile)
 		notifyJM.log('pass', 'Weeding all defined config sets on %s' % gethostname(), verbose)
 		notifyJM.report('start')
 
