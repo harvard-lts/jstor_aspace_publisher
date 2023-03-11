@@ -70,7 +70,7 @@ def run_main():
 	
 	# Create a notify object, this will also set-up logging
 	logFile   = f'{logDir}/{jobCode}.{dateStamp}'
-	notifyJM  = notify('monitor+log', jobCode, logFile)
+	notifyJM  = notify('log', jobCode, logFile)
 
 	# Let the Job Monitor know that the job has started
 	notifyJM.log('pass', jobName, verbose)
