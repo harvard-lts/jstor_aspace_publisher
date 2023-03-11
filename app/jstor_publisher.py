@@ -397,9 +397,13 @@ Update job timestamp file"""
             #call via export incremental script for Primo (Hollis Inages)
             if (publish_to_primo):
                 primoPublishSuccess = self.export_files("incr", "primo")
+            else:
+                current_app.logger.info("Publish to Primo skipped")
             #call via export incremental script for Librarycloud
             if (publish_to_lc):
                 lcPublishSuccess = self.export_files("incr", "lc")
+            else:
+                current_app.logger.info("Publish to Librarycloud skipped")
 
         #update mongo with librarycloud and primo record lists
         for primoRec in primoIds:
@@ -503,8 +507,8 @@ Update job timestamp file"""
             sp = subprocess.call([concat_script_path], 
                 capture_output=True, text=True, check=True, stderr=subprocess.STDOUT)
             if ((sp.stdout != None) and (sp.stdout.strip() != "" )): # error
-                current_app.logger.error("File concatenation failed: {}", sp.stdout.strip())
-                current_app.logger.error("Primo and LC publish aborted")
+                #current_app.logger.error("File concatenation failed: {}", sp.stdout.strip())
+                current_app.logger.error("File concatenation failed, Primo and LC publish aborted")
                 return False
             else:
                 return True
