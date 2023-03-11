@@ -48,10 +48,10 @@ try:
 	privateKey = config['privateKey']
 except:
 	print('Error: failed to load config parameter privateKey from %s' % scriptConf)
-try:
-	jobMonitor = config['jobMonitor']
-except:
-	print('Error: failed to load config parameter jobMonitor from %s' % scriptConf)
+#try:
+#	jobMonitor = config['jobMonitor']
+#except:
+#	print('Error: failed to load config parameter jobMonitor from %s' % scriptConf)
 try:
 	adminMailTo = config['adminMailTo']
 except:
@@ -60,15 +60,6 @@ try:
 	adminMailFrom = config['adminMailTo']
 except:
 	print('Error: failed to load config parameter adminMailFrom from %s' % scriptConf)
-try:
-	oracleHome = config['oracleHome']
-except:
-	print('Error: failed to load config parameter oracleHome from %s' % scriptConf)
-try:
-	gpgDir = config['gpgDir']
-	gpgCmd = config['gpgCmd']
-except:
-	print('Gpg parameters are not set')
 		
 #
 # Functions
