@@ -48,10 +48,10 @@ try:
 	privateKey = config['privateKey']
 except:
 	print('Error: failed to load config parameter privateKey from %s' % scriptConf)
-#try:
-#	jobMonitor = config['jobMonitor']
-#except:
-#	print('Error: failed to load config parameter jobMonitor from %s' % scriptConf)
+try:
+	jobMonitor = config['jobMonitor']
+except:
+	print('Error: failed to load config parameter jobMonitor from %s' % scriptConf)
 try:
 	adminMailTo = config['adminMailTo']
 except:
