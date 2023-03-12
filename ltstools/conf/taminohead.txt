@@ -1,0 +1,1 @@
+<ino:object xmlns:ino="http://namespaces.softwareag.com/tamino/response2">
