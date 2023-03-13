@@ -548,8 +548,8 @@ Update job timestamp file"""
 
     #add more sophisticated healthchecking later
     def healthcheck(self):
-        version = os.environ.get('APP_VERSION', "NOT FOUND")
-        return version
+        hc = "OK"
+        return hc
 
     def revert_task(self, job_ticket_id, task_name):
         return True

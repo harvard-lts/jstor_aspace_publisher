@@ -58,4 +58,4 @@ def define_resources(app):
         def get(self):
             worker = jstor_publisher.JstorPublisher()
             healthcheck = worker.healthcheck()
-            return {"version": healthcheck}
+            return {"system": healthcheck}
