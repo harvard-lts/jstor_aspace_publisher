@@ -17,7 +17,7 @@ def define_resources(app):
     # Namespace
     iiif = api.namespace('jstor_publisher', description="Manages queues, dispatches tasks, keeps track of workers and restarts if necessary.")
 
-    # Heartbeat/health check route
+    # Version check route
     @iiif.route('/version', endpoint="version")
     class Version(Resource):
         def get(self):
@@ -51,3 +51,11 @@ def define_resources(app):
                 ticket_id = 'job: '+ str(item)
                 celery.execute.send_task("tasks.tasks.do_task", args=[{'job_ticket_id': ticket_id}], kwargs={}, queue=os.getenv('QUEUE_NAME'))
             return str(batchSize) + " jobs started..." + str(type(batchSize))
+
+    # Heartbeat/health check route  
+    @iiif.route('/healthcheck', endpoint="healthcheck")
+    class Healthcheck(Resource):
+        def get(self):
+            worker = jstor_publisher.JstorPublisher()
+            healthcheck = worker.healthcheck()
+            return {"version": healthcheck}
