@@ -1,0 +1,105 @@
+# Used by our send_files.py script to send files to remote systems.
+# A block of parameters must be defined for a set of files to weed. Copying 
+# and editing an existing block is recommended to help maintain the proper 
+# format. Notice that each config set needs to start with a dash. Also, 
+# numbers should not be quoted (or the script will take them as strings).
+#
+# Config set parameters
+#
+#   profile_name
+#       Name used the identify the profile
+#
+#   upload_protocol
+#       The SFTP and FTP protocols are supported
+#
+#   upload_port
+#       Optional, use if a port must be specified for scp. Not used for ftp.
+#
+#   send_done
+#       Optional. If used and set to 'YES' a done.FLAG file will be
+#       sent after all other files are delivered.
+#
+#   upload_site
+#       Remote site that file will be uploaded to
+#
+#   upload_user
+#       User account used to upload file to remote site
+#
+#   private_key
+#       The private key used for sftp key exchanges
+#
+#   upload_password
+#       Password used to access S/FTP account
+#
+#   upload_directory
+#       Directory to upload file to on remote site. 
+#       Using a period is fine if changing directories is not required.
+#
+#   local_directory
+#       The local directory that will be checked for files to upload.
+#       If the keywords below are used they will be swapped using current date.
+#           _YEAR_
+#           _MONTH_
+#           _DAY_        
+#
+#   local_files
+#       A regular expression used to find the local files to upload. The same
+#       keywords used for local_directory are supported in the same way.
+#
+#   rename_upload_file
+#       Optional. Use to have files renamed before uploading. If the _MATCH_
+#       keyword is used, whatever is matched in the parentheses in
+#       local_files is swapped in place.
+#
+#   local_archive
+#       Move files to this directory after they have been uploaded 
+#       successfully. This parameter is optional. Upload files do not
+#       have to be archived.
+#       
+#   handle_unmatched_files
+#       To handle files found in the local directory that do not match the
+#       local_files regular expression use one of the keywords below. This
+#       parameter is optional. If not used, unmatched files will be ignored.
+#
+#           WARN -> files are reported in a warning message
+#           FAIL -> files are reported in a failure message
+#
+#   unpack_first
+#       Optional. Use and set to True if files need to be 
+#       unpacked (using gunzip and tar) before sending
+#       
+#   handle_no_files
+#       How to report when no files are found to upload. Keywords supported are
+#       below. This parameter is optional and will default to PASS if not used.
+#
+#			PASS -> reported in a success message			
+#           WARN -> reported in a warning message
+#           FAIL -> reported in a failure message
+
+# SFTP
+- profile_name: ''
+  upload_protocol: 'SFTP'
+  send_done: ''  
+  upload_site: ''
+  upload_user: ''
+  private_key: ''
+  upload_directory: ''
+  local_directory: ''
+  local_archive: ''
+  local_files: ''
+  handle_unmatched_files: ''
+  handle_no_files: ''
+
+# Ftp
+- profile_name: ''
+  upload_protocol: 'FTP'
+  local_directory: ''
+  local_archive: ''
+  local_files: ''
+  send_done: ''  
+  upload_site: ''
+  upload_user: ''
+  upload_password: ''
+  upload_directory: ''
+  handle_unmatched_files: ''
+  handle_no_files: ''

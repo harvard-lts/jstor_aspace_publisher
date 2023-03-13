@@ -1,0 +1,10 @@
+conf/log-monitor-*
+conf/backup
+conf/*.json
+files/*.*
+*/files/*.*
+log/*
+*.log
+via/log/*[0-9]
+*.pyc
+*.yaml

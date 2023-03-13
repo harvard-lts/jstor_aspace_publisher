@@ -1,0 +1,24 @@
+# Top level configuration file using YAML format.
+
+# Directory holding all of of scripts
+ltsScripts: ''
+
+# Mode/instance such as prod, qa, test, dev
+mode: ''
+
+# Used when transferring files using a ssh key exchange
+privateKey: ''
+
+# Base url to the Job Monitor
+jobMonitor: ''
+
+# Errors that are suspected to be system level problems should be sent here
+adminMailTo: ''
+adminMailFrom: ''
+
+# For gpg_file.py
+gpgDir: ''
+gpgCmd: ''
+
+# To work with Oracle databases
+oracleHome: '/usr/lib/oracle/12.2/client64'

@@ -1,4 +1,4 @@
-import sys, os, os.path, json, requests, traceback, time, boto3
+import sys, os, os.path, json, requests, traceback, time, boto3, subprocess, re
 from tenacity import retry, retry_if_result, wait_random_exponential, retry_if_not_exception_type
 from datetime import datetime
 from flask import Flask, request, jsonify, current_app, make_response
@@ -10,6 +10,12 @@ import fnmatch
 harvest_ignore_dirs = (os.environ.get('HARVEST_IGNORE_DIRS','')).split(',')
 transform_ignore_dirs = (os.environ.get('TRANSFORM_IGNORE_DIRS','')).split(',')
 ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
+concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
+via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
+weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
+weed_files_flag = os.environ.get('WEED_FILES', False)
+publish_to_primo = os.environ.get('PUBLISH_PRIMO', False)
+publish_to_lc = os.environ.get('PUBLISH_LC', False)
 
 class JstorPublisher():
     def __init__(self):
@@ -165,6 +171,13 @@ Update job timestamp file"""
                 mongo_client.close()
             except Exception as err:
                 current_app.logger.error("Error: unable to connect to mongodb, {}", err)
+
+        #call weed files script
+        if (weed_files_flag):
+            if (self.weed_files()):
+                current_app.logger.info("weeding files successful")
+            else:
+                current_app.logger.error("weeding files failed")
         
         return result
 
@@ -194,6 +207,12 @@ Update job timestamp file"""
             mongo_db = mongo_client[mongo_dbname]
         except Exception as err:
             current_app.logger.error("Error: unable to connect to mongodb, {}", err)
+        
+        deletedIds = []
+        primoIds = []
+        lcIds = []
+        reRecordId = re.compile('.+deleteRecordId.*\>(\w+\d+)\<\/deleteRecordId.+')
+        reRecordId2 = re.compile('.+recordId.*\>(\w+\d+)\<\/recordId.+')
 
         #publish to VIA and SSIO
         current_app.logger.info("Publishing to S3")
@@ -206,6 +225,7 @@ Update job timestamp file"""
                         repository_name = self.repositories[setSpec]
                         opDir = set["opDir"]
                         currentPath = baseDir + "/" + opDir
+                        hollisTransformedPath = baseDir + "/" + opDir + "_hollis"
                         totalPublishCount = 0
                         harvestdate = datetime.today().strftime('%Y-%m-%d') 
                         if harvestset is None:
@@ -228,6 +248,10 @@ Update job timestamp file"""
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
+                                            #add this id to the list of files that will go to librarycloud 
+                                            lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                            lcIds.append(lcRecord)
                                             #write/update record
                                             try:
                                                 status = "update"
@@ -248,6 +272,17 @@ Update job timestamp file"""
                                             except Exception as e:
                                                 current_app.logger.error(e)
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
+
+                            if os.path.exists(hollisTransformedPath): #gather list of ids that will go to hollis (primo)
+                                current_app.logger.info("looking for ids to be published "+
+                                    "to primo in current path: " + hollisTransformedPath)
+                                if len(fnmatch.filter(os.listdir(hollisTransformedPath), '*.xml')) > 0:
+                                    for filename in os.listdir(hollisTransformedPath):
+                                        identifier = filename[:-4]
+                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                        primoIds.append(primoRecord)
+
                         elif  setSpec == harvestset: 
                             current_app.logger.info("Publishing for only one set: " + setSpec)
                             current_app.logger.info("looking in current path: " + currentPath)
@@ -269,6 +304,10 @@ Update job timestamp file"""
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
+                                            #add this id to the list of files that will go to librarycloud 
+                                            lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                            lcIds.append(lcRecord)
                                             #write/update record
                                             try:
                                                 status = "update"
@@ -290,6 +329,17 @@ Update job timestamp file"""
                                             except Exception as e:
                                                 current_app.logger.error(e)
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)     
+
+                            if os.path.exists(hollisTransformedPath): #gather list of ids that will go to hollis (primo)
+                                current_app.logger.info("looking for ids to be published "+
+                                    "to primo in current path: " + hollisTransformedPath)
+                                if len(fnmatch.filter(os.listdir(hollisTransformedPath), '*.xml')) > 0:
+                                    for filename in os.listdir(hollisTransformedPath):
+                                        identifier = filename[:-4]
+                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                        primoIds.append(primoRecord)
+
                         #update harvest record
                         try:
                             self.write_harvest(job_ticket_id, harvestdate, setSpec, 
@@ -346,6 +396,57 @@ Update job timestamp file"""
 
         if (mongo_client is not None):            
             mongo_client.close()
+
+        lcPublishSuccess = False
+        primoPublishSuccess = False
+        concatFileSuccess = self.concat_files()
+
+        if (concatFileSuccess):
+            #call via export incremental script for Primo (Hollis Inages)
+            if (publish_to_primo):
+                primoPublishSuccess = self.export_files("incr", "primo")
+            else:
+                current_app.logger.info("Publish to Primo skipped")
+            #call via export incremental script for Librarycloud
+            if (publish_to_lc):
+                lcPublishSuccess = self.export_files("incr", "lc")
+            else:
+                current_app.logger.info("Publish to Librarycloud skipped")
+        else:
+            if (not publish_to_lc):
+                current_app.logger.info("Publish to LC skipped")
+            if (not publish_to_primo):
+                current_app.logger.info("Publish to Primo skipped")
+
+        #update mongo with librarycloud and primo record lists
+        for primoRec in primoIds:
+            try:
+                error = None
+                if (not primoPublishSuccess):
+                    error = "export failed"
+                if (not publish_to_primo):
+                    error = "not exported"
+                self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
+                    primoRec["setSpec"], primoRec["repository_name"], "update", 
+                    record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
+            except Exception as e:
+                current_app.logger.error(e)
+                current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+
+        for lcRec in lcIds:
+            try:
+                error = None
+                if (not lcPublishSuccess):
+                    error = "export failed"
+                if (not publish_to_lc):
+                    error = "not exported"
+                self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
+                    lcRec["setSpec"], lcRec["repository_name"], "update", 
+                    record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
+            except Exception as e:
+                current_app.logger.error(e)
+                current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+                
     
     def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name,
             status, collection_name, success, destination, mongo_db, error=None):
@@ -411,6 +512,44 @@ Update job timestamp file"""
         except Exception as err:
             current_app.logger.info("Error: unable to load repository table from mongodb, {}", err)
             return repositories
+
+    def concat_files(self):
+        #concatenate files for primo andlibrarycloud
+        try:
+            subprocess.check_call([concat_script_path])
+            return True
+        except Exception as e:
+            current_app.logger.error("File concatenation failed: Primo and LC publish aborted")
+            return False
+
+    def export_files(self, size, dest):
+        #call via export incremental script for Primo (Hollis Inages)
+        try:
+            sp = subprocess.call([via_script_path, size, "-p", dest], 
+                capture_output=True, text=True, check=True, stderr=subprocess.STDOUT)
+            if ((sp.stdout != None) and (sp.stdout.strip() != "" )):
+                current_app.logger.info(sp.stdout.strip())
+                if ("Successful" in sp.stdout.strip()):
+                    return True
+            else:
+                return False
+        except Exception as e:
+            current_app.logger.error(dest + " export script error: {}", e)
+            return False
+    
+    def weed_files(self):
+        #call weed files script
+        try:
+            subprocess.check_call([weed_script_path])
+            return True
+        except Exception as e:
+            current_app.logger.error("Delete script error: {}", e)
+            return False
+
+    #add more sophisticated healthchecking later
+    def healthcheck(self):
+        hc = "OK"
+        return hc
 
     def revert_task(self, job_ticket_id, task_name):
         return True

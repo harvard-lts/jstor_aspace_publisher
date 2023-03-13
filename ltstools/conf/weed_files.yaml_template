@@ -1,0 +1,56 @@
+# Used by our weed files script. A block of parameters must be defined for a 
+# set of files or directories to weed. Copying 
+# and editing an existing block is recommended to help maintain the proper 
+# format. Notice that each config set needs to start with a dash. Also, numbers
+# and boolens should not be quoted or the script will take them as strings.
+#
+# Config set parameters
+#
+#   profile_name
+#     Name used to identify the profile
+#
+#   search_criteria
+#     Search for files or directories using the keyword FILENAME or DIRNAME.
+#
+#   regular_expression
+#     Regular expression used to match files or directories to be weeded.
+#
+#   search_dir
+#     Start search from directory specified with this parameter
+#
+#   zip_old_files
+#     Set to True to gzip old files or directories. Otherwise, set to False or 
+#     do not use. Note that when a file or directory is zipped a new file is 
+#     created with the current date. Zipping is done before file removal.
+#
+#   days_to_keep_unzipped
+#     Number of days to keep files or directories unzipped.
+#
+#   remove_old_files
+#     Set to True to remove old files or directories. 
+#     Otherwise, set to False or do not use.
+#
+#   days_to_keep
+#     Retention period in days. Older files or directories that 
+#     are matched by the parameters above will be removed.
+#
+#   files_to_keep
+#     The number of newest files to keep. Do not use with days_to_keep. 
+
+- profile_name: ''
+  search_criteria: ''
+  regular_expression: ''
+  search_dir: ''
+  zip_old_files: 
+  days_to_keep_unzipped:
+  remove_old_files:
+  days_to_keep: 
+
+- profile_name: ''
+  search_criteria: ''
+  regular_expression: ''
+  search_dir: ''
+  zip_old_files: 
+  days_to_keep_unzipped:
+  remove_old_files:
+  files_to_keep: 
