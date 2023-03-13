@@ -19,8 +19,11 @@ RUN apt-get update && apt-get install -y libpq-dev gcc python-dev supervisor ngi
 
 RUN useradd --create-home jstorforumadm
 WORKDIR /home/jstorforumadm
-RUN mkdir /home/jstorforumadm/.ssh
+RUN mkdir /home/jstorforumadm/.ssh && \
+    chmod 700 /home/jstorforumadm/.ssh && \ 
+    chown jstorforumadm:jstorforumadm /home/jstorforumadm/.ssh
 COPY --chown=jstorforumadm ./ .
+
 
 # Update permissions for the jstorforumadm user and group
 #COPY change_id.sh /root/change_id.sh
