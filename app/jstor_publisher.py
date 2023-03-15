@@ -556,7 +556,7 @@ Update job timestamp file"""
                     subprocess.check_call([publish_lc_incr_script_path])
                 elif (size == "full"):
                     subprocess.check_call([publish_lc_full_script_path])
-            else if (dest == "primo"):
+            elif (dest == "primo"):
                 if (size == "incr"):
                     subprocess.check_call([publish_primo_incr_script_path])
                 elif (size == "full"):
