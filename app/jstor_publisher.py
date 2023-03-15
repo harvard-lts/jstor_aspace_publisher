@@ -537,8 +537,8 @@ Update job timestamp file"""
     def export_files(self, size, dest):
         #call via export incremental script for Primo (Hollis Inages)
         try:
-            sp = subprocess.call([via_script_path, size, "-p", dest], 
-                capture_output=True, text=True, check=True, stderr=subprocess.STDOUT)
+            sp = subprocess.run([via_script_path, size, "-p", dest], 
+                capture_output=True, shell=True, text=True, check=True, stderr=subprocess.STDOUT)
             if ((sp.stdout != None) and (sp.stdout.strip() != "" )):
                 current_app.logger.info(sp.stdout.strip())
                 if ("Successful" in sp.stdout.strip()):
