@@ -394,55 +394,60 @@ Update job timestamp file"""
                 current_app.logger.error(e)
                 current_app.logger.error("Mongo error writing harvest record for: aspace")
 
-        lcPublishSuccess = False
-        primoPublishSuccess = False
-        concatFileSuccess = self.concat_files()
+        if (jobname == 'jstorforum'):
+            lcPublishSuccess = False
+            primoPublishSuccess = False
+            concatFileSuccess = self.concat_files()
 
-        if (concatFileSuccess):
-            #call via export incremental script for Primo (Hollis Inages)
-            if (publish_to_primo):
-                primoPublishSuccess = self.export_files("incr", "primo")
+            if (concatFileSuccess):
+                #call via export incremental script for Primo (Hollis Inages)
+                if (publish_to_primo):
+                    current_app.logger.info("Publishing to Primo...")
+                    primoPublishSuccess = self.export_files("incr", "primo")
+                    current_app.logger.info("Publishing to Primo completed")
+                else:
+                    current_app.logger.info("Publish to Primo skipped")
+                    #call via export incremental script for Librarycloud
+                if (publish_to_lc):
+                    current_app.logger.info("Publishing to Librarycloud...")
+                    lcPublishSuccess = self.export_files("incr", "lc")
+                    current_app.logger.info("Publishing to Librarycloud completed")
+                else:
+                    current_app.logger.info("Publish to Librarycloud skipped")
             else:
-                current_app.logger.info("Publish to Primo skipped")
-            #call via export incremental script for Librarycloud
-            if (publish_to_lc):
-                lcPublishSuccess = self.export_files("incr", "lc")
-            else:
-                current_app.logger.info("Publish to Librarycloud skipped")
-        else:
-            if (not publish_to_lc):
-                current_app.logger.info("Publish to LC skipped")
-            if (not publish_to_primo):
-                current_app.logger.info("Publish to Primo skipped")
-
-        #update mongo with librarycloud and primo record lists
-        for primoRec in primoIds:
-            try:
-                error = None
-                if (not primoPublishSuccess):
-                    error = "export failed"
-                if (not publish_to_primo):
-                    error = "not exported"
-                self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
-                    primoRec["setSpec"], primoRec["repository_name"], "update", 
-                    record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
-            except Exception as e:
-                current_app.logger.error(e)
-                current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
-
-        for lcRec in lcIds:
-            try:
-                error = None
-                if (not lcPublishSuccess):
-                    error = "export failed"
                 if (not publish_to_lc):
-                    error = "not exported"
-                self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
-                    lcRec["setSpec"], lcRec["repository_name"], "update", 
-                    record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
-            except Exception as e:
-                current_app.logger.error(e)
-                current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+                    current_app.logger.info("Publish to LC skipped")
+                if (not publish_to_primo):
+                    current_app.logger.info("Publish to Primo skipped")
+
+            #update mongo with librarycloud and primo record lists
+            for primoRec in primoIds:
+                try:
+                    error = None
+                    if (not primoPublishSuccess):
+                        error = "export failed"
+                    if (not publish_to_primo):
+                        error = "not exported"
+                    self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
+                        primoRec["setSpec"], primoRec["repository_name"], "update", 
+                        record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
+                except Exception as e:
+                    current_app.logger.error(e)
+                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+
+            for lcRec in lcIds:
+                try:
+                    error = None
+                    if (not lcPublishSuccess):
+                        error = "export failed"
+                    if (not publish_to_lc):
+                        error = "not exported"
+                    self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
+                        lcRec["setSpec"], lcRec["repository_name"], "update", 
+                        record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
+                except Exception as e:
+                    current_app.logger.error(e)
+                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
 
         if (mongo_client is not None):            
             mongo_client.close()
