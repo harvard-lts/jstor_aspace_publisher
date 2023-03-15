@@ -6,6 +6,7 @@ from random import randint
 from time import sleep
 from pymongo import MongoClient
 import fnmatch
+from ast import literal_eval
 
 harvest_ignore_dirs = (os.environ.get('HARVEST_IGNORE_DIRS','')).split(',')
 transform_ignore_dirs = (os.environ.get('TRANSFORM_IGNORE_DIRS','')).split(',')
@@ -17,9 +18,18 @@ publish_primo_incr_script_path= os.environ.get('PUBLISH_PRIMO_INCR_SCRIPT_PATH',
 publish_primo_full_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full.sh')
 via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
 weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
-weed_files_flag = os.environ.get('WEED_FILES', False)
-publish_to_primo = os.environ.get('PUBLISH_PRIMO', False)
-publish_to_lc = os.environ.get('PUBLISH_LC', False)
+try:
+    weed_files_flag = literal_eval(os.environ.get('WEED_FILES', 'False'))
+except ValueError:
+    weed_files_flag = False
+try:
+    publish_to_primo = literal_eval(os.environ.get('PUBLISH_PRIMO', 'False'))
+except ValueError:
+    publish_to_primo = False
+try:
+    publish_to_lc = literal_eval(os.environ.get('PUBLISH_LC', 'False'))
+except ValueError:
+    publish_to_lc = False
 
 class JstorPublisher():
     def __init__(self):
