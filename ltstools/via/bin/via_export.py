@@ -316,4 +316,5 @@ def start_new_file(fileCount, xmlHeader):
 #    
 # Run main script
 if __name__ == '__main__':
-    return run_main()
+	exitcode = run_main()
+	sys.exit(exitcode)
