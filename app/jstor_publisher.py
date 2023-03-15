@@ -11,6 +11,10 @@ harvest_ignore_dirs = (os.environ.get('HARVEST_IGNORE_DIRS','')).split(',')
 transform_ignore_dirs = (os.environ.get('TRANSFORM_IGNORE_DIRS','')).split(',')
 ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
 concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
+publish_lc_incr_script_path= os.environ.get('PUBLISH_LC_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-incr.sh')
+publish_lc_full_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full.sh')
+publish_primo_incr_script_path= os.environ.get('PUBLISH_PRIMO_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-incr.sh')
+publish_primo_full_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full.sh')
 via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
 weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
 weed_files_flag = os.environ.get('WEED_FILES', False)
@@ -537,18 +541,19 @@ Update job timestamp file"""
     def export_files(self, size, dest):
         #call via export incremental script for Primo (Hollis Inages)
         try:
-            # sp = subprocess.run([via_script_path, size, "-p", dest], 
-            #     capture_output=True, shell=True, text=True, check=True, stderr=subprocess.STDOUT)
-            subprocess.check_call([via_script_path, size, "-p", dest])
+            if (dest == "lc"):
+                if (size == "incr"):
+                    subprocess.check_call([publish_lc_incr_script_path])
+                elif (size == "full"):
+                    subprocess.check_call([publish_lc_full_script_path])
+            else if (dest == "primo"):
+                if (size == "incr"):
+                    subprocess.check_call([publish_primo_incr_script_path])
+                elif (size == "full"):
+                    subprocess.check_call([publish_primo_full_script_path])
             return True
-            # if ((sp.stdout != None) and (sp.stdout.strip() != "" )):
-            #     current_app.logger.info(sp.stdout.strip())
-            #     if ("Successful" in sp.stdout.strip()):
-            #         return True
-            # else:
-            #     return False
         except Exception as e:
-            current_app.logger.error(dest + " export script error: {}", e)
+            current_app.logger.error(dest + " " + size + " export script error: {}", e)
             return False
     
     def weed_files(self):
