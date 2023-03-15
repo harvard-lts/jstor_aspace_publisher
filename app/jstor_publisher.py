@@ -404,14 +404,20 @@ Update job timestamp file"""
                 if (publish_to_primo):
                     current_app.logger.info("Publishing to Primo...")
                     primoPublishSuccess = self.export_files("incr", "primo")
-                    current_app.logger.info("Publishing to Primo completed")
+                    if (primoPublishSuccess):
+                        current_app.logger.info("Publishing to Primo successful")
+                    else:
+                        current_app.logger.info("Publishing to Primo failed")
                 else:
                     current_app.logger.info("Publish to Primo skipped")
                     #call via export incremental script for Librarycloud
                 if (publish_to_lc):
                     current_app.logger.info("Publishing to Librarycloud...")
                     lcPublishSuccess = self.export_files("incr", "lc")
-                    current_app.logger.info("Publishing to Librarycloud completed")
+                    if (lcPublishSuccess):
+                        current_app.logger.info("Publishing to Librarycloud successful")
+                    else:
+                        current_app.logger.info("Publishing to Librarycloud failed")
                 else:
                     current_app.logger.info("Publish to Librarycloud skipped")
             else:
