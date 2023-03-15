@@ -6,16 +6,30 @@ from random import randint
 from time import sleep
 from pymongo import MongoClient
 import fnmatch
+from ast import literal_eval
 
 harvest_ignore_dirs = (os.environ.get('HARVEST_IGNORE_DIRS','')).split(',')
 transform_ignore_dirs = (os.environ.get('TRANSFORM_IGNORE_DIRS','')).split(',')
 ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
 concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
+publish_lc_incr_script_path= os.environ.get('PUBLISH_LC_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-incr.sh')
+publish_lc_full_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full.sh')
+publish_primo_incr_script_path= os.environ.get('PUBLISH_PRIMO_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-incr.sh')
+publish_primo_full_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full.sh')
 via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
 weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
-weed_files_flag = os.environ.get('WEED_FILES', False)
-publish_to_primo = os.environ.get('PUBLISH_PRIMO', False)
-publish_to_lc = os.environ.get('PUBLISH_LC', False)
+try:
+    weed_files_flag = literal_eval(os.environ.get('WEED_FILES', 'False'))
+except ValueError:
+    weed_files_flag = False
+try:
+    publish_to_primo = literal_eval(os.environ.get('PUBLISH_PRIMO', 'False'))
+except ValueError:
+    publish_to_primo = False
+try:
+    publish_to_lc = literal_eval(os.environ.get('PUBLISH_LC', 'False'))
+except ValueError:
+    publish_to_lc = False
 
 class JstorPublisher():
     def __init__(self):
@@ -394,58 +408,69 @@ Update job timestamp file"""
                 current_app.logger.error(e)
                 current_app.logger.error("Mongo error writing harvest record for: aspace")
 
+        if (jobname == 'jstorforum'):
+            lcPublishSuccess = False
+            primoPublishSuccess = False
+            concatFileSuccess = self.concat_files()
+
+            if (concatFileSuccess):
+                #call via export incremental script for Primo (Hollis Inages)
+                if (publish_to_primo):
+                    current_app.logger.info("Publishing to Primo...")
+                    primoPublishSuccess = self.export_files("incr", "primo")
+                    if (primoPublishSuccess):
+                        current_app.logger.info("Publishing to Primo successful")
+                    else:
+                        current_app.logger.info("Publishing to Primo failed")
+                else:
+                    current_app.logger.info("Publish to Primo skipped")
+                    #call via export incremental script for Librarycloud
+                if (publish_to_lc):
+                    current_app.logger.info("Publishing to Librarycloud...")
+                    lcPublishSuccess = self.export_files("incr", "lc")
+                    if (lcPublishSuccess):
+                        current_app.logger.info("Publishing to Librarycloud successful")
+                    else:
+                        current_app.logger.info("Publishing to Librarycloud failed")
+                else:
+                    current_app.logger.info("Publish to Librarycloud skipped")
+            else:
+                if (not publish_to_lc):
+                    current_app.logger.info("Publish to LC skipped")
+                if (not publish_to_primo):
+                    current_app.logger.info("Publish to Primo skipped")
+
+            #update mongo with librarycloud and primo record lists
+            for primoRec in primoIds:
+                try:
+                    error = None
+                    if (not primoPublishSuccess):
+                        error = "export failed"
+                    if (not publish_to_primo):
+                        error = "not exported"
+                    self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
+                        primoRec["setSpec"], primoRec["repository_name"], "update", 
+                        record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
+                except Exception as e:
+                    current_app.logger.error(e)
+                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+
+            for lcRec in lcIds:
+                try:
+                    error = None
+                    if (not lcPublishSuccess):
+                        error = "export failed"
+                    if (not publish_to_lc):
+                        error = "not exported"
+                    self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
+                        lcRec["setSpec"], lcRec["repository_name"], "update", 
+                        record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
+                except Exception as e:
+                    current_app.logger.error(e)
+                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+
         if (mongo_client is not None):            
             mongo_client.close()
-
-        lcPublishSuccess = False
-        primoPublishSuccess = False
-        concatFileSuccess = self.concat_files()
-
-        if (concatFileSuccess):
-            #call via export incremental script for Primo (Hollis Inages)
-            if (publish_to_primo):
-                primoPublishSuccess = self.export_files("incr", "primo")
-            else:
-                current_app.logger.info("Publish to Primo skipped")
-            #call via export incremental script for Librarycloud
-            if (publish_to_lc):
-                lcPublishSuccess = self.export_files("incr", "lc")
-            else:
-                current_app.logger.info("Publish to Librarycloud skipped")
-        else:
-            if (not publish_to_lc):
-                current_app.logger.info("Publish to LC skipped")
-            if (not publish_to_primo):
-                current_app.logger.info("Publish to Primo skipped")
-
-        #update mongo with librarycloud and primo record lists
-        for primoRec in primoIds:
-            try:
-                error = None
-                if (not primoPublishSuccess):
-                    error = "export failed"
-                if (not publish_to_primo):
-                    error = "not exported"
-                self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
-                    primoRec["setSpec"], primoRec["repository_name"], "update", 
-                    record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
-            except Exception as e:
-                current_app.logger.error(e)
-                current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
-
-        for lcRec in lcIds:
-            try:
-                error = None
-                if (not lcPublishSuccess):
-                    error = "export failed"
-                if (not publish_to_lc):
-                    error = "not exported"
-                self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
-                    lcRec["setSpec"], lcRec["repository_name"], "update", 
-                    record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
-            except Exception as e:
-                current_app.logger.error(e)
-                current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
                 
     
     def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name,
@@ -514,9 +539,10 @@ Update job timestamp file"""
             return repositories
 
     def concat_files(self):
-        #concatenate files for primo andlibrarycloud
+        #concatenate files for primo and librarycloud
         try:
             subprocess.check_call([concat_script_path])
+            current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
             current_app.logger.error("File concatenation failed: Primo and LC publish aborted")
@@ -525,16 +551,19 @@ Update job timestamp file"""
     def export_files(self, size, dest):
         #call via export incremental script for Primo (Hollis Inages)
         try:
-            sp = subprocess.call([via_script_path, size, "-p", dest], 
-                capture_output=True, text=True, check=True, stderr=subprocess.STDOUT)
-            if ((sp.stdout != None) and (sp.stdout.strip() != "" )):
-                current_app.logger.info(sp.stdout.strip())
-                if ("Successful" in sp.stdout.strip()):
-                    return True
-            else:
-                return False
+            if (dest == "lc"):
+                if (size == "incr"):
+                    subprocess.check_call([publish_lc_incr_script_path])
+                elif (size == "full"):
+                    subprocess.check_call([publish_lc_full_script_path])
+            elif (dest == "primo"):
+                if (size == "incr"):
+                    subprocess.check_call([publish_primo_incr_script_path])
+                elif (size == "full"):
+                    subprocess.check_call([publish_primo_full_script_path])
+            return True
         except Exception as e:
-            current_app.logger.error(dest + " export script error: {}", e)
+            current_app.logger.error(dest + " " + size + " export script error: {}", e)
             return False
     
     def weed_files(self):

@@ -100,12 +100,14 @@ def run_main():
 		if msgFail:	
 			notifyJM.log('fail', msgFail, True)
 			print(msgFail)
+			return -1
 		if msgWarn:	
 			notifyJM.log('warn', msgWarn, verbose)
 			print(msgWarn)
 		if msgPass: 
 			notifyJM.log('pass', msgPass, verbose)
 			print(msgPass)
+			return 0
 
 	notifyJM.report('complete')
 
@@ -314,4 +316,5 @@ def start_new_file(fileCount, xmlHeader):
 #    
 # Run main script
 if __name__ == '__main__':
-    run_main()
+	exitcode = run_main()
+	sys.exit(exitcode)
