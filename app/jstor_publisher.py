@@ -394,9 +394,6 @@ Update job timestamp file"""
                 current_app.logger.error(e)
                 current_app.logger.error("Mongo error writing harvest record for: aspace")
 
-        if (mongo_client is not None):            
-            mongo_client.close()
-
         lcPublishSuccess = False
         primoPublishSuccess = False
         concatFileSuccess = self.concat_files()
@@ -446,6 +443,9 @@ Update job timestamp file"""
             except Exception as e:
                 current_app.logger.error(e)
                 current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+
+        if (mongo_client is not None):            
+            mongo_client.close()
                 
     
     def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name,
@@ -514,9 +514,10 @@ Update job timestamp file"""
             return repositories
 
     def concat_files(self):
-        #concatenate files for primo andlibrarycloud
+        #concatenate files for primo and librarycloud
         try:
             subprocess.check_call([concat_script_path])
+            current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
             current_app.logger.error("File concatenation failed: Primo and LC publish aborted")
