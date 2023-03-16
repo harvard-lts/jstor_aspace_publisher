@@ -158,6 +158,7 @@ def main():
 			elif not filesToKeep:
 				if (daysToKeep == 0):
 					secondsToKeep = 1 # delete all files, incl ones just created
+					daysToKeep = 1
 				else:
 					notifyJM.log('fail', f'Neither retention Period or files to keep is set in {confFile} for {confProfile}', verbose)
 					badConfigSet = True
