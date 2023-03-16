@@ -153,13 +153,14 @@ def main():
 					
 		# Convert retention period from days to seconds if we're removing files
 		if removeOldFiles:
-			if (daysToKeep == 0):
-				secondsToKeep = 1 # delete all files, incl ones just created
 			if daysToKeep:
 				secondsToKeep = daysToKeep * 86400
 			elif not filesToKeep:
-				notifyJM.log('fail', f'Neither retention Period or files to keep is set in {confFile} for {confProfile}', verbose)
-				badConfigSet = True
+				if (daysToKeep == 0):
+					secondsToKeep = 1 # delete all files, incl ones just created
+				else:
+					notifyJM.log('fail', f'Neither retention Period or files to keep is set in {confFile} for {confProfile}', verbose)
+					badConfigSet = True
 
 		# And then do the same for leaving files unzipped
 		if zipOldFiles:
