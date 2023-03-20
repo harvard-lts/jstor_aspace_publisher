@@ -24,7 +24,7 @@ py==1.11.0
 pymongo==3.12.1
 pyparsing==3.0.6
 pyrsistent==0.18.0
-pysftp==0.2.9
+pysftp==0.2.8
 pytest==6.2.1
 python-dateutil==2.8.1
 python-json-logger==2.0.1
