@@ -509,7 +509,7 @@ Update job timestamp file"""
             harvest_date_obj = datetime.strptime(harvest_date, "%Y-%m-%d")
             last_update = datetime.now()
             harvest_record = { "id": harvest_id, "last_update": last_update, "harvest_date": harvest_date_obj, 
-                "repository_id": repository_id, "repository_name": repository_name, repo_short_name, 
+                "repository_id": repository_id, "repository_name": repository_name, "repo_short_name": repo_short_name, 
                 "total_published_count": total_published, "success": success, "jobname": jobname }
             harvest_collection = mongo_db[collection_name]
             harvest_collection.insert_one(harvest_record)
