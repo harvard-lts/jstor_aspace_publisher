@@ -268,7 +268,7 @@ Update job timestamp file"""
                                             lcIds.append(lcRecord)
                                             #write/update record
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = True
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
                                                     status, record_collection_name, success, destination, mongo_db)   
@@ -279,7 +279,7 @@ Update job timestamp file"""
                                             current_app.logger.error("VIA/SSIO Publishing error: {}", err)
                                             publish_successful = False
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = False
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
                                                     status, record_collection_name, success, destination, mongo_db, err)    
@@ -324,7 +324,7 @@ Update job timestamp file"""
                                             lcIds.append(lcRecord)
                                             #write/update record
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = True
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
                                                     status, record_collection_name, success, destination, mongo_db)  
@@ -336,7 +336,7 @@ Update job timestamp file"""
                                             publish_successful = False
                                             #log error to mongo
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = False
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
                                                     status, record_collection_name, success, destination, mongo_db, err)   
@@ -381,7 +381,7 @@ Update job timestamp file"""
                             totalPublishCount = totalPublishCount + 1
                             #write/update record
                             try:
-                                status = "update"
+                                status = "add_update"
                                 success = True
                                 self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
                                     status, record_collection_name, success, destination, mongo_db)   
@@ -393,7 +393,7 @@ Update job timestamp file"""
                             publish_successful = False
                             #log error to mongo
                             try:
-                                status = "update"
+                                status = "add_update"
                                 success = False
                                 self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
                                     status, record_collection_name, success, destination, mongo_db, err)  
@@ -449,7 +449,7 @@ Update job timestamp file"""
                     if (not publish_to_primo):
                         error = "not exported"
                     self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
-                        primoRec["setSpec"], primoRec["repository_name"], "update", 
+                        primoRec["setSpec"], primoRec["repository_name"], "add_update", 
                         record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
                 except Exception as e:
                     current_app.logger.error(e)
@@ -463,7 +463,7 @@ Update job timestamp file"""
                     if (not publish_to_lc):
                         error = "not exported"
                     self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
-                        lcRec["setSpec"], lcRec["repository_name"], "update", 
+                        lcRec["setSpec"], lcRec["repository_name"], "add_update", 
                         record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
                 except Exception as e:
                     current_app.logger.error(e)
