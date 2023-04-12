@@ -474,7 +474,7 @@ Update job timestamp file"""
             mongo_client.close()
                 
     
-    def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name,
+    def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name, repo_short_name, 
             status, collection_name, success, destination, mongo_db, error=None):
         if mongo_db == None:
             current_app.logger.info("Error: mongo db not instantiated")
