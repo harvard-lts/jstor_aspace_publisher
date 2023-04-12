@@ -384,7 +384,7 @@ Update job timestamp file"""
                             try:
                                 status = "add_update"
                                 success = True
-                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
+                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", "ASP", 
                                     status, record_collection_name, success, destination, mongo_db)   
                             except Exception as e:
                                 current_app.logger.error(e)
@@ -396,7 +396,7 @@ Update job timestamp file"""
                             try:
                                 status = "add_update"
                                 success = False
-                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
+                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", "ASP", 
                                     status, record_collection_name, success, destination, mongo_db, err)  
                             except Exception as e:
                                 current_app.logger.error(e)
@@ -404,7 +404,7 @@ Update job timestamp file"""
             #update harvest record
             try:
                 self.write_harvest(job_ticket_id, harvestdate, "0000", 
-                    "aspace", totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                    "aspace", "ASP", totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
             except Exception as e:
                 current_app.logger.error(e)
                 current_app.logger.error("Mongo error writing harvest record for: aspace")
