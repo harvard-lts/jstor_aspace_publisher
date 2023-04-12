@@ -236,7 +236,8 @@ Update job timestamp file"""
                     for set in job["harvests"]["sets"]:
                         publish_successful = True 
                         setSpec = "{}".format(set["setSpec"])
-                        repository_name = self.repositories[setSpec]
+                        repository_name = self.repositories[setSpec]["displayname"]
+                        repo_short_name = self.repositories[setSpec]["shortname"]
                         opDir = set["opDir"]
                         currentPath = baseDir + "/" + opDir
                         hollisTransformedPath = baseDir + "/" + opDir + "_hollis"
@@ -264,13 +265,13 @@ Update job timestamp file"""
                                             totalPublishCount = totalPublishCount + 1
                                             #add this id to the list of files that will go to librarycloud 
                                             lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
-                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                             lcIds.append(lcRecord)
                                             #write/update record
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = True
-                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
+                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db)   
                                             except Exception as e:
                                                 current_app.logger.error(e)
@@ -279,9 +280,9 @@ Update job timestamp file"""
                                             current_app.logger.error("VIA/SSIO Publishing error: {}", err)
                                             publish_successful = False
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = False
-                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
+                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db, err)    
                                             except Exception as e:
                                                 current_app.logger.error(e)
@@ -294,7 +295,7 @@ Update job timestamp file"""
                                     for filename in os.listdir(hollisTransformedPath):
                                         identifier = filename[:-4]
                                         primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
-                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
                         elif  setSpec == harvestset: 
@@ -320,13 +321,13 @@ Update job timestamp file"""
                                             totalPublishCount = totalPublishCount + 1
                                             #add this id to the list of files that will go to librarycloud 
                                             lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
-                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                             lcIds.append(lcRecord)
                                             #write/update record
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = True
-                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
+                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db)  
                                             except Exception as e:
                                                 current_app.logger.error(e)
@@ -336,9 +337,9 @@ Update job timestamp file"""
                                             publish_successful = False
                                             #log error to mongo
                                             try:
-                                                status = "update"
+                                                status = "add_update"
                                                 success = False
-                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, 
+                                                self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db, err)   
                                             except Exception as e:
                                                 current_app.logger.error(e)
@@ -351,13 +352,13 @@ Update job timestamp file"""
                                     for filename in os.listdir(hollisTransformedPath):
                                         identifier = filename[:-4]
                                         primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
-                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name}
+                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
                         #update harvest record
                         try:
                             self.write_harvest(job_ticket_id, harvestdate, setSpec, 
-                                repository_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                                repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
                         except Exception as e:
                             current_app.logger.error(e)
                             current_app.logger.error("Mongo error writing harvest record for : " +  setSpec)   
@@ -381,9 +382,9 @@ Update job timestamp file"""
                             totalPublishCount = totalPublishCount + 1
                             #write/update record
                             try:
-                                status = "update"
+                                status = "add_update"
                                 success = True
-                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
+                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", "ASP", 
                                     status, record_collection_name, success, destination, mongo_db)   
                             except Exception as e:
                                 current_app.logger.error(e)
@@ -393,9 +394,9 @@ Update job timestamp file"""
                             publish_successful = False
                             #log error to mongo
                             try:
-                                status = "update"
+                                status = "add_update"
                                 success = False
-                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", 
+                                self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", "ASP", 
                                     status, record_collection_name, success, destination, mongo_db, err)  
                             except Exception as e:
                                 current_app.logger.error(e)
@@ -403,7 +404,7 @@ Update job timestamp file"""
             #update harvest record
             try:
                 self.write_harvest(job_ticket_id, harvestdate, "0000", 
-                    "aspace", totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                    "aspace", "ASP", totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
             except Exception as e:
                 current_app.logger.error(e)
                 current_app.logger.error("Mongo error writing harvest record for: aspace")
@@ -449,7 +450,7 @@ Update job timestamp file"""
                     if (not publish_to_primo):
                         error = "not exported"
                     self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
-                        primoRec["setSpec"], primoRec["repository_name"], "update", 
+                        primoRec["setSpec"], primoRec["repository_name"], primoRec["repo_short_name"], "add_update", 
                         record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
                 except Exception as e:
                     current_app.logger.error(e)
@@ -463,7 +464,7 @@ Update job timestamp file"""
                     if (not publish_to_lc):
                         error = "not exported"
                     self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
-                        lcRec["setSpec"], lcRec["repository_name"], "update", 
+                        lcRec["setSpec"], lcRec["repository_name"], lcRec["repo_short_name"], "add_update", 
                         record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
                 except Exception as e:
                     current_app.logger.error(e)
@@ -473,7 +474,7 @@ Update job timestamp file"""
             mongo_client.close()
                 
     
-    def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name,
+    def write_record(self, harvest_id, record_id, harvest_date, repository_id, repository_name, repo_short_name, 
             status, collection_name, success, destination, mongo_db, error=None):
         if mongo_db == None:
             current_app.logger.info("Error: mongo db not instantiated")
@@ -487,7 +488,7 @@ Update job timestamp file"""
             harvest_date_obj = datetime.strptime(harvest_date, "%Y-%m-%d")
             last_update = datetime.now()
             harvest_record = { "harvest_id": harvest_id, "last_update": last_update, "harvest_date": harvest_date_obj, "record_id": record_id, 
-                "repository_id": repository_id, "repository_name": repository_name, 
+                "repository_id": repository_id, "repository_name": repository_name, "repo_short_name": repo_short_name, 
                 "status": status, "success": success, "destination": destination, "error": err_msg } 
             record_collection = mongo_db[collection_name]
             record_collection.insert_one(harvest_record)
@@ -497,7 +498,7 @@ Update job timestamp file"""
             current_app.logger.info("Error: unable to connect to mongodb, {}", err)
         return
     
-    def write_harvest(self, harvest_id, harvest_date, repository_id, repository_name,
+    def write_harvest(self, harvest_id, harvest_date, repository_id, repository_name, repo_short_name, 
             total_published, collection_name, mongo_db, jobname, success):
         if mongo_db == None:
             current_app.logger.info("Error: mongo db not instantiated")
@@ -508,7 +509,7 @@ Update job timestamp file"""
             harvest_date_obj = datetime.strptime(harvest_date, "%Y-%m-%d")
             last_update = datetime.now()
             harvest_record = { "id": harvest_id, "last_update": last_update, "harvest_date": harvest_date_obj, 
-                "repository_id": repository_id, "repository_name": repository_name, 
+                "repository_id": repository_id, "repository_name": repository_name, "repo_short_name": repo_short_name, 
                 "total_published_count": total_published, "success": success, "jobname": jobname }
             harvest_collection = mongo_db[collection_name]
             harvest_collection.insert_one(harvest_record)
@@ -532,7 +533,7 @@ Update job timestamp file"""
             repos = repository_collection.find({})
             for r in repos:
                 k = r["_id"]
-                v = r["displayname"]
+                v = { "displayname": r["displayname"], "shortname": r["shortname"] }
                 repositories[k] = v 
             mongo_client.close()
             return repositories
