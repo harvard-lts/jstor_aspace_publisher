@@ -465,7 +465,7 @@ Update job timestamp file"""
                         error = "not exported"
                     self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
                         lcRec["setSpec"], lcRec["repository_name"], lcRec["repo_short_name"], "add_update", 
-                        record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
+                        record_collection_name, primoPublishSuccess, "lc", mongo_db, error)  
                 except Exception as e:
                     current_app.logger.error(e)
                     current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
