@@ -376,7 +376,7 @@ Update job timestamp file"""
                     current_app.logger.info("Publishing to Aspace S3")
                     destination = "Aspace"
                     for filename in os.listdir(aspaceDir):
-                        identifier = (filename[:-7])[15:]
+                        identifier = filename[:-4]
                         try:
                             filepath = aspaceDir + "/" + filename
                             current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
@@ -419,7 +419,7 @@ Update job timestamp file"""
             success = True
             if len(fnmatch.filter(os.listdir(deletesDir), '*.xml')) > 0:
                 for filename in os.listdir(deletesDir):
-                    identifier = filename[:-4]
+                    identifier = (filename[:-7])[15:]
                     try:
                         self.write_record(job_ticket_id, identifier, harvestdate, "", "", "", 
                                     status, record_collection_name, success, "lc", mongo_db) 
