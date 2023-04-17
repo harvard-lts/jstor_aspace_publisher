@@ -266,7 +266,7 @@ Update job timestamp file"""
                                                 destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
                                             if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
-                                                lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status", "add_update", 
+                                                lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                         "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                                 lcIds.append(lcRecord)
                                             #write/update record
@@ -296,7 +296,7 @@ Update job timestamp file"""
                                 if len(fnmatch.filter(os.listdir(hollisTransformedPath), '*.xml')) > 0:
                                     for filename in os.listdir(hollisTransformedPath):
                                         identifier = filename[:-4]
-                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status", "add_update", 
+                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
@@ -322,7 +322,7 @@ Update job timestamp file"""
                                                 destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
                                             if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
-                                                lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status", "add_update", 
+                                                lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                     "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                                 lcIds.append(lcRecord)
                                             #write/update record
@@ -353,7 +353,7 @@ Update job timestamp file"""
                                 if len(fnmatch.filter(os.listdir(hollisTransformedPath), '*.xml')) > 0:
                                     for filename in os.listdir(hollisTransformedPath):
                                         identifier = filename[:-4]
-                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status", "add_update",  
+                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update",  
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
