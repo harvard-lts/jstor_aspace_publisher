@@ -376,7 +376,7 @@ Update job timestamp file"""
                     current_app.logger.info("Publishing to Aspace S3")
                     destination = "Aspace"
                     for filename in os.listdir(aspaceDir):
-                        identifier = filename[:-4]
+                        identifier = (filename[:-7])[15:]
                         try:
                             filepath = aspaceDir + "/" + filename
                             current_app.logger.info("Uploading: " + filepath + " to " + filename + " in the ASPACE bucket")
