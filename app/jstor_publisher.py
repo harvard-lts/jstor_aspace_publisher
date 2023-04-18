@@ -420,15 +420,18 @@ Update job timestamp file"""
                 success = True
                 if len(fnmatch.filter(os.listdir(deletesDir), '*.xml')) > 0:
                     for filename in os.listdir(deletesDir):
-                        identifier = (filename[:-7])[15:]
-                        try:
-                            self.write_record(job_ticket_id, identifier, harvestdate, "", "", "", 
-                                status, record_collection_name, success, "lc", mongo_db) 
-                            self.write_record(job_ticket_id, identifier, harvestdate, "", "", "", 
-                                status, record_collection_name, success, "primo", mongo_db) 
-                        except Exception as e:
-                            current_app.logger.error(e)
-                            current_app.logger.error("Mongo error writing deleted records")
+                        if filename.endswith(".xml"):
+                            setspec, identifier = (filename[:-4]).split("_", 1)
+                            repository_name = self.repositories[setSpec]["displayname"]
+                            repo_short_name = self.repositories[setSpec]["shortname"]
+                            try:
+                                self.write_record(job_ticket_id, identifier, harvestdate, setspec, repository_name, repo_short_name, 
+                                    status, record_collection_name, success, "lc", mongo_db) 
+                                self.write_record(job_ticket_id, identifier, harvestdate, setspec, repository_name, repo_short_name, 
+                                    status, record_collection_name, success, "primo", mongo_db) 
+                            except Exception as e:
+                                current_app.logger.error(e)
+                                current_app.logger.error("Mongo error writing deleted records")
             lcPublishSuccess = False
             primoPublishSuccess = False
             concatFileSuccess = self.concat_files()
