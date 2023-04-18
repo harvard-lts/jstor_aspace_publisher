@@ -416,7 +416,7 @@ Update job timestamp file"""
             current_app.logger.info("Mark deleted records")
             if os.path.exists(deletesDir):
                 harvestdate = datetime.today().strftime('%Y-%m-%d')
-                status = "deleted"
+                status = "delete"
                 success = True
                 if len(fnmatch.filter(os.listdir(deletesDir), '*.xml')) > 0:
                     for filename in os.listdir(deletesDir):
