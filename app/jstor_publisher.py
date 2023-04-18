@@ -206,6 +206,8 @@ Update job timestamp file"""
         harvestconfig = json.loads(harvjobsjson)
         harvestDir = os.getenv("JSTOR_HARVEST_DIR")        
         transformDir = os.getenv("JSTOR_TRANSFORM_DIR")
+        dropsDir = os.getenv("JSTOR_DROPS_DIR")
+        deletesDir = os.getenv("JSTOR_DELETES_DIR")
         aspaceDir = os.getenv("JSTOR_ASPACE_DIR")
         directories = [harvestDir, transformDir]
         mongo_url = os.environ.get('MONGO_URL')
@@ -263,10 +265,10 @@ Update job timestamp file"""
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
-                                            #add this id to the list of files that will go to librarycloud 
-                                            lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
-                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
-                                            lcIds.append(lcRecord)
+                                            if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
+                                                lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
+                                                        "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
+                                                lcIds.append(lcRecord)
                                             #write/update record
                                             try:
                                                 status = "add_update"
@@ -288,13 +290,13 @@ Update job timestamp file"""
                                                 current_app.logger.error(e)
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
 
-                            if os.path.exists(hollisTransformedPath): #gather list of ids that will go to hollis (primo)
+                            if (os.path.exists(hollisTransformedPath) and (baseDir == transformDir)): #gather list of ids that will go to hollis (primo)
                                 current_app.logger.info("looking for ids to be published "+
                                     "to primo in current path: " + hollisTransformedPath)
                                 if len(fnmatch.filter(os.listdir(hollisTransformedPath), '*.xml')) > 0:
                                     for filename in os.listdir(hollisTransformedPath):
                                         identifier = filename[:-4]
-                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
+                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
@@ -319,10 +321,10 @@ Update job timestamp file"""
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
                                             totalPublishCount = totalPublishCount + 1
-                                            #add this id to the list of files that will go to librarycloud 
-                                            lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
-                                                "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
-                                            lcIds.append(lcRecord)
+                                            if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
+                                                lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
+                                                    "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
+                                                lcIds.append(lcRecord)
                                             #write/update record
                                             try:
                                                 status = "add_update"
@@ -345,13 +347,13 @@ Update job timestamp file"""
                                                 current_app.logger.error(e)
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)     
 
-                            if os.path.exists(hollisTransformedPath): #gather list of ids that will go to hollis (primo)
+                            if (os.path.exists(hollisTransformedPath) and (baseDir == transformDir)): #gather list of ids that will go to hollis (primo)
                                 current_app.logger.info("looking for ids to be published "+
                                     "to primo in current path: " + hollisTransformedPath)
                                 if len(fnmatch.filter(os.listdir(hollisTransformedPath), '*.xml')) > 0:
                                     for filename in os.listdir(hollisTransformedPath):
                                         identifier = filename[:-4]
-                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, 
+                                        primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update",  
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
@@ -410,6 +412,26 @@ Update job timestamp file"""
                 current_app.logger.error("Mongo error writing harvest record for: aspace")
 
         if (jobname == 'jstorforum'):
+            #mark deleted records
+            current_app.logger.info("Mark deleted records")
+            if os.path.exists(deletesDir):
+                harvestdate = datetime.today().strftime('%Y-%m-%d')
+                status = "delete"
+                success = True
+                if len(fnmatch.filter(os.listdir(deletesDir), '*.xml')) > 0:
+                    for filename in os.listdir(deletesDir):
+                        if (filename.endswith(".xml") and not filename.startswith("via_export_del_")):
+                            setspec, identifier = (filename[:-4]).split("_", 1)
+                            repository_name = self.repositories[setSpec]["displayname"]
+                            repo_short_name = self.repositories[setSpec]["shortname"]
+                            try:
+                                self.write_record(job_ticket_id, identifier, harvestdate, setspec, repository_name, repo_short_name, 
+                                    status, record_collection_name, success, "lc", mongo_db) 
+                                self.write_record(job_ticket_id, identifier, harvestdate, setspec, repository_name, repo_short_name, 
+                                    status, record_collection_name, success, "primo", mongo_db) 
+                            except Exception as e:
+                                current_app.logger.error(e)
+                                current_app.logger.error("Mongo error writing deleted records")
             lcPublishSuccess = False
             primoPublishSuccess = False
             concatFileSuccess = self.concat_files()
@@ -450,7 +472,7 @@ Update job timestamp file"""
                     if (not publish_to_primo):
                         error = "not exported"
                     self.write_record(job_ticket_id, primoRec["identifier"], primoRec["harvestdate"], 
-                        primoRec["setSpec"], primoRec["repository_name"], primoRec["repo_short_name"], "add_update", 
+                        primoRec["setSpec"], primoRec["repository_name"], primoRec["repo_short_name"], primoRec["status"], 
                         record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
                 except Exception as e:
                     current_app.logger.error(e)
@@ -464,7 +486,7 @@ Update job timestamp file"""
                     if (not publish_to_lc):
                         error = "not exported"
                     self.write_record(job_ticket_id, lcRec["identifier"], lcRec["harvestdate"], 
-                        lcRec["setSpec"], lcRec["repository_name"], lcRec["repo_short_name"], "add_update", 
+                        lcRec["setSpec"], lcRec["repository_name"], lcRec["repo_short_name"], lcRec["status"], 
                         record_collection_name, primoPublishSuccess, "lc", mongo_db, error)  
                 except Exception as e:
                     current_app.logger.error(e)
