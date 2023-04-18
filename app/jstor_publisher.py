@@ -140,7 +140,7 @@ Update job timestamp file"""
             try:
                 self.do_publish('jstorforum', harvestset, job_ticket_id)
             except Exception as err:
-                current_app.logger.error("Error: unable to publish jstorforum records, {}", err)
+                current_app.logger.error("Error: unable to publish jstorforum records", exc_info=True)
 
         aspace = False
         if 'aspace' in request_json:
@@ -150,7 +150,7 @@ Update job timestamp file"""
             try:
                 self.do_publish('aspace', None, job_ticket_id)
             except Exception as err:
-                current_app.logger.error("Error: unable to publish aspace records, {}", err)
+                current_app.logger.error("Error: unable to publish aspace records", exc_info=True)
 
 
         #integration test: write small record to mongo to prove connectivity
@@ -163,12 +163,12 @@ Update job timestamp file"""
             try:
                 self.do_publish('jstorforum', harvestset, job_ticket_id, True)
             except Exception as err:
-                current_app.logger.error("Error: unable to publish jstorforum records in itest, {}", err)
+                current_app.logger.error("Error: unable to publish jstorforum records in itest", exc_info=True)
 
             try:
                 self.do_publish('aspace', None, job_ticket_id, True)
             except Exception as err:
-                current_app.logger.error("Error: unable to publish aspace records in itest, {}", err)
+                current_app.logger.error("Error: unable to publish aspace records in itest", exc_info=True)
             
             try:
                 mongo_url = os.environ.get('MONGO_URL')
@@ -184,7 +184,7 @@ Update job timestamp file"""
                 integration_collection.insert_one(test_record)
                 mongo_client.close()
             except Exception as err:
-                current_app.logger.error("Error: unable to connect to mongodb, {}", err)
+                current_app.logger.error("Error: unable to connect to mongodb", exc_info=True)
 
         #call weed files script
         if (weed_files_flag):
@@ -222,7 +222,7 @@ Update job timestamp file"""
             mongo_client = MongoClient(mongo_url, maxPoolSize=1)
             mongo_db = mongo_client[mongo_dbname]
         except Exception as err:
-            current_app.logger.error("Error: unable to connect to mongodb, {}", err)
+            current_app.logger.error("Error: unable to connect to mongodb", exc_info=True)
         
         deletedIds = []
         primoIds = []
@@ -276,10 +276,9 @@ Update job timestamp file"""
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db)   
                                             except Exception as e:
-                                                current_app.logger.error(e)
-                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
+                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier, exc_info=True)
                                         except Exception as err:
-                                            current_app.logger.error("VIA/SSIO Publishing error: {}", err)
+                                            current_app.logger.error("VIA/SSIO Publishing error", exc_info=True)
                                             publish_successful = False
                                             try:
                                                 status = "add_update"
@@ -287,8 +286,7 @@ Update job timestamp file"""
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db, err)    
                                             except Exception as e:
-                                                current_app.logger.error(e)
-                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
+                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier, exc_info=True)
 
                             if (os.path.exists(hollisTransformedPath) and (baseDir == transformDir)): #gather list of ids that will go to hollis (primo)
                                 current_app.logger.info("looking for ids to be published "+
@@ -332,10 +330,9 @@ Update job timestamp file"""
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db)  
                                             except Exception as e:
-                                                current_app.logger.error(e)
-                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)
+                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier, exc_info=True)
                                         except Exception as err:
-                                            current_app.logger.error("VIA/SSIO Publishing error: {}", err)
+                                            current_app.logger.error("VIA/SSIO Publishing error", exc_info=True)
                                             publish_successful = False
                                             #log error to mongo
                                             try:
@@ -344,8 +341,7 @@ Update job timestamp file"""
                                                 self.write_record(job_ticket_id, identifier, harvestdate, setSpec, repository_name, repo_short_name, 
                                                     status, record_collection_name, success, destination, mongo_db, err)   
                                             except Exception as e:
-                                                current_app.logger.error(e)
-                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier)     
+                                                current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier, exc_info=True)     
 
                             if (os.path.exists(hollisTransformedPath) and (baseDir == transformDir)): #gather list of ids that will go to hollis (primo)
                                 current_app.logger.info("looking for ids to be published "+
@@ -362,8 +358,7 @@ Update job timestamp file"""
                             self.write_harvest(job_ticket_id, harvestdate, setSpec, 
                                 repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
                         except Exception as e:
-                            current_app.logger.error(e)
-                            current_app.logger.error("Mongo error writing harvest record for : " +  setSpec)   
+                            current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True) 
 
         #publish to Aspace
         #if jobname == 'aspace' and jobname == job["jobName"]:  
@@ -389,10 +384,9 @@ Update job timestamp file"""
                                 self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", "ASP", 
                                     status, record_collection_name, success, destination, mongo_db)   
                             except Exception as e:
-                                current_app.logger.error(e)
-                                current_app.logger.error("Mongo error writing aspace record: " +  identifier)
+                                current_app.logger.error("Mongo error writing aspace record: " +  identifier, exc_info=True)
                         except Exception as err:
-                            current_app.logger.error("Aspace Publishing error: {}", err)
+                            current_app.logger.error("Aspace Publishing error", exc_info=True)
                             publish_successful = False
                             #log error to mongo
                             try:
@@ -401,15 +395,13 @@ Update job timestamp file"""
                                 self.write_record(job_ticket_id, identifier, harvestdate, "0000", "aspace", "ASP", 
                                     status, record_collection_name, success, destination, mongo_db, err)  
                             except Exception as e:
-                                current_app.logger.error(e)
-                                current_app.logger.error("Mongo error writing aspace record " +  identifier + ": {}", e)
+                                current_app.logger.error("Mongo error writing aspace record " +  identifier, exc_info=True)
             #update harvest record
             try:
                 self.write_harvest(job_ticket_id, harvestdate, "0000", 
                     "aspace", "ASP", totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
             except Exception as e:
-                current_app.logger.error(e)
-                current_app.logger.error("Mongo error writing harvest record for: aspace")
+                current_app.logger.error("Mongo error writing harvest record for: aspace", exc_info=True)
 
         if (jobname == 'jstorforum'):
             #mark deleted records
@@ -430,8 +422,7 @@ Update job timestamp file"""
                                 self.write_record(job_ticket_id, identifier, harvestdate, setspec, repository_name, repo_short_name, 
                                     status, record_collection_name, success, "primo", mongo_db) 
                             except Exception as e:
-                                current_app.logger.error(e)
-                                current_app.logger.error("Mongo error writing deleted records")
+                                current_app.logger.error("Mongo error writing deleted records", exc_info=True)
             lcPublishSuccess = False
             primoPublishSuccess = False
             concatFileSuccess = self.concat_files()
@@ -475,8 +466,7 @@ Update job timestamp file"""
                         primoRec["setSpec"], primoRec["repository_name"], primoRec["repo_short_name"], primoRec["status"], 
                         record_collection_name, primoPublishSuccess, "primo", mongo_db, error)  
                 except Exception as e:
-                    current_app.logger.error(e)
-                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"], exc_info=True)
 
             for lcRec in lcIds:
                 try:
@@ -489,8 +479,7 @@ Update job timestamp file"""
                         lcRec["setSpec"], lcRec["repository_name"], lcRec["repo_short_name"], lcRec["status"], 
                         record_collection_name, primoPublishSuccess, "lc", mongo_db, error)  
                 except Exception as e:
-                    current_app.logger.error(e)
-                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"])
+                    current_app.logger.error("Mongo error writing primo record: " +  primoRec["identifier"], exc_info=True)
 
         if (mongo_client is not None):            
             mongo_client.close()
@@ -517,7 +506,7 @@ Update job timestamp file"""
             #record_collection.update_one(query, harvest_record, upsert=True)
             current_app.logger.info("record " + str(record_id) + " of repo " + str(repository_id) + " written to mongo ")
         except Exception as err:
-            current_app.logger.info("Error: unable to connect to mongodb, {}", err)
+            current_app.logger.info("Error: unable to connect to mongodb", exc_info=True)
         return
     
     def write_harvest(self, harvest_id, harvest_date, repository_id, repository_name, repo_short_name, 
@@ -537,7 +526,7 @@ Update job timestamp file"""
             harvest_collection.insert_one(harvest_record)
             current_app.logger.info(repository_name + " harvest for " + harvest_date + " written to mongo ")
         except Exception as err:
-            current_app.logger.info("Error: unable to connect to mongodb, {}", err)
+            current_app.logger.info("Error: unable to connect to mongodb", exc_info=True)
         return
 
     def load_repositories(self):
@@ -560,7 +549,7 @@ Update job timestamp file"""
             mongo_client.close()
             return repositories
         except Exception as err:
-            current_app.logger.info("Error: unable to load repository table from mongodb, {}", err)
+            current_app.logger.info("Error: unable to load repository table from mongodb", exc_info=True)
             return repositories
 
     def concat_files(self):
@@ -570,7 +559,7 @@ Update job timestamp file"""
             current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
-            current_app.logger.error("File concatenation failed: Primo and LC publish aborted")
+            current_app.logger.error("File concatenation failed: Primo and LC publish aborted", exc_info=True)
             return False
 
     def export_files(self, size, dest):
@@ -588,7 +577,7 @@ Update job timestamp file"""
                     subprocess.check_call([publish_primo_full_script_path])
             return True
         except Exception as e:
-            current_app.logger.error(dest + " " + size + " export script error: {}", e)
+            current_app.logger.error(dest + " " + size + " export script error", exc_info=True)
             return False
     
     def weed_files(self):
@@ -597,7 +586,7 @@ Update job timestamp file"""
             subprocess.check_call([weed_script_path])
             return True
         except Exception as e:
-            current_app.logger.error("Delete script error: {}", e)
+            current_app.logger.error("Delete script error", exc_info=True)
             return False
 
     #add more sophisticated healthchecking later
