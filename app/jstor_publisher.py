@@ -264,11 +264,11 @@ Update job timestamp file"""
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
-                                            totalPublishCount = totalPublishCount + 1
-                                            if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
+                                            if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud
                                                 lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                         "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                                 lcIds.append(lcRecord)
+                                                totalPublishCount = totalPublishCount + 1 
                                             #write/update record
                                             try:
                                                 status = "add_update"
@@ -318,11 +318,11 @@ Update job timestamp file"""
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
-                                            totalPublishCount = totalPublishCount + 1
                                             if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
                                                 lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                     "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                                 lcIds.append(lcRecord)
+                                                totalPublishCount = totalPublishCount + 1
                                             #write/update record
                                             try:
                                                 status = "add_update"
@@ -355,8 +355,9 @@ Update job timestamp file"""
 
                         #update harvest record
                         try:
-                            self.write_harvest(job_ticket_id, harvestdate, setSpec, 
-                                repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                            if (baseDir == transformDir):
+                                self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                    repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
                         except Exception as e:
                             current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True) 
 
