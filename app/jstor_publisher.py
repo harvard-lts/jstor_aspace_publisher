@@ -413,7 +413,10 @@ Update job timestamp file"""
                 if len(fnmatch.filter(os.listdir(deletesDir), '*.xml')) > 0:
                     for filename in os.listdir(deletesDir):
                         if (filename.endswith(".xml") and not filename.startswith("via_export_del_")):
-                            setspec, identifier = (filename[:-4]).split("_", 1)
+                            try:
+                                setspec, identifier = (filename[:-4]).split("_", 1)
+                            except:
+                                continue
                             repository_name = self.repositories[setSpec]["displayname"]
                             repo_short_name = self.repositories[setSpec]["shortname"]
                             try:
