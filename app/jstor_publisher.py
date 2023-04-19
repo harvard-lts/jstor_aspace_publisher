@@ -264,7 +264,7 @@ Update job timestamp file"""
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
-                                            totalPublishCount = totalPublishCount + 1
+                                                totalPublishCount = totalPublishCount + 1
                                             if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
                                                 lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                         "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
@@ -318,7 +318,7 @@ Update job timestamp file"""
                                                 current_app.logger.info("Uploading: " + filepath + " to " + s3prefix + filename + " in the VIA bucket") 
                                                 self.via_s3_bucket.upload_file(filepath, s3prefix + filename)
                                                 destination = "VIA"
-                                            totalPublishCount = totalPublishCount + 1
+                                                totalPublishCount = totalPublishCount + 1
                                             if (baseDir == transformDir):  #add this id to the list of files that will go to librarycloud 
                                                 lcRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                     "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
