@@ -355,8 +355,9 @@ Update job timestamp file"""
 
                         #update harvest record
                         try:
-                            self.write_harvest(job_ticket_id, harvestdate, setSpec, 
-                                repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                            if (baseDir == transformDir):
+                                self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                    repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
                         except Exception as e:
                             current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True) 
 
