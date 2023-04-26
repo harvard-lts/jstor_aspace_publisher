@@ -137,10 +137,6 @@ Update job timestamp file"""
         until_field = None
         if 'until' in request_json:
             until_field = request_json["until"].replace("-", "")
-
-        from_field = None
-        if 'from' in request_json:
-            from_field = request_json["from"].replace("-", "")
         
         harvest_date = None
         if 'harvestdate' in request_json:
@@ -442,7 +438,8 @@ Update job timestamp file"""
                                 current_app.logger.error("Mongo error writing deleted records", exc_info=True)
             lcPublishSuccess = False
             primoPublishSuccess = False
-            concatFileSuccess = self.concat_files(harvestset, harvest_date, until_field, from_field)
+            #TODO - get full run flag 
+            concatFileSuccess = self.concat_files(harvestset, harvest_date, until_field)
 
             if (concatFileSuccess):
                 #call via export incremental script for Primo (Hollis Inages)
@@ -569,7 +566,7 @@ Update job timestamp file"""
             current_app.logger.info("Error: unable to load repository table from mongodb", exc_info=True)
             return repositories
 
-    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, from_field = None, fullrun= None):
+    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, fullrun= None):
         #concatenate files for primo and librarycloud
         concat_opts = ""
         if (harvestset != None):
@@ -578,9 +575,7 @@ Update job timestamp file"""
             concat_opts = concat_opts + " -d " + harvestdate
         if (until_field != None):
             concat_opts = concat_opts + " -u " + until_field
-        if (from_field != None):
-            concat_opts = concat_opts + " -f " + from_field
-        if (fullrun == None):
+        if (fullrun != None):
             concat_opts = concat_opts + " -l " + fullrun
         try:
             subprocess.check_call([concat_script_path + concat_opts])
