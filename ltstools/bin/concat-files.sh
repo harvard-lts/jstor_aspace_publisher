@@ -44,7 +44,6 @@ elif [ -z $HARVESTDATE ] && [ -n $UNTILDATE ]
 then
   DATESTAMP=$TODAYSDATE_$UNTILDATE
 else
-then
   DATESTAMP=$TODAYSDATE
 fi
 
