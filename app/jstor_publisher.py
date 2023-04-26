@@ -14,8 +14,10 @@ ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
 concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
 publish_lc_incr_script_path= os.environ.get('PUBLISH_LC_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-incr.sh')
 publish_lc_full_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full.sh')
+publish_lc_full_set_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full-set.sh')
 publish_primo_incr_script_path= os.environ.get('PUBLISH_PRIMO_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-incr.sh')
 publish_primo_full_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full.sh')
+publish_primo_full_set_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SET_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full-set.sh')
 via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
 weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
 try:
@@ -131,6 +133,18 @@ Update job timestamp file"""
         harvestset = None
         if 'harvestset' in request_json:
             harvestset = request_json["harvestset"]
+        
+        until_field = None
+        if 'until' in request_json:
+            until_field = request_json["until"].replace("-", "")
+
+        from_field = None
+        if 'from' in request_json:
+            from_field = request_json["from"].replace("-", "")
+        
+        harvest_date = None
+        if 'harvestdate' in request_json:
+            harvest_date = request_json["harvestdate"].replace("-", "")
 
         jstorforum = False
         if 'jstorforum' in request_json:
@@ -138,7 +152,7 @@ Update job timestamp file"""
             jstorforum = request_json['jstorforum']
         if jstorforum:
             try:
-                self.do_publish('jstorforum', harvestset, job_ticket_id)
+                self.do_publish('jstorforum', harvestset, job_ticket_id, False, harvest_date, until_field)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish jstorforum records", exc_info=True)
 
@@ -148,10 +162,9 @@ Update job timestamp file"""
             aspace = request_json['aspace']
         if aspace:
             try:
-                self.do_publish('aspace', None, job_ticket_id)
+                self.do_publish('aspace', None, job_ticket_id, False, harvest_date, until_field)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish aspace records", exc_info=True)
-
 
         #integration test: write small record to mongo to prove connectivity
         integration_test = False
@@ -161,12 +174,12 @@ Update job timestamp file"""
             current_app.logger.info("running integration test")
 
             try:
-                self.do_publish('jstorforum', harvestset, job_ticket_id, True)
+                self.do_publish('jstorforum', harvestset, job_ticket_id, True, harvest_date, until_field)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish jstorforum records in itest", exc_info=True)
 
             try:
-                self.do_publish('aspace', None, job_ticket_id, True)
+                self.do_publish('aspace', None, job_ticket_id, True, harvest_date, until_field)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish aspace records in itest", exc_info=True)
             
@@ -195,7 +208,7 @@ Update job timestamp file"""
         
         return result
 
-    def do_publish(self, jobname, harvestset, job_ticket_id, itest=False):
+    def do_publish(self, jobname, harvestset, job_ticket_id, itest=False, harvest_date=None, until_field=None):
         if itest:
             configfile = os.getenv("JSTOR_HARVEST_TEST_CONFIG")
         else:
@@ -418,8 +431,8 @@ Update job timestamp file"""
                                 setspec, identifier = (filename[:-4]).split("_", 1)
                             except:
                                 continue
-                            repository_name = self.repositories[setSpec]["displayname"]
-                            repo_short_name = self.repositories[setSpec]["shortname"]
+                            repository_name = self.repositories[setspec]["displayname"]
+                            repo_short_name = self.repositories[setspec]["shortname"]
                             try:
                                 self.write_record(job_ticket_id, identifier, harvestdate, setspec, repository_name, repo_short_name, 
                                     status, record_collection_name, success, "lc", mongo_db) 
@@ -429,7 +442,7 @@ Update job timestamp file"""
                                 current_app.logger.error("Mongo error writing deleted records", exc_info=True)
             lcPublishSuccess = False
             primoPublishSuccess = False
-            concatFileSuccess = self.concat_files()
+            concatFileSuccess = self.concat_files(harvestset, harvest_date, until_field, from_field)
 
             if (concatFileSuccess):
                 #call via export incremental script for Primo (Hollis Inages)
@@ -556,10 +569,21 @@ Update job timestamp file"""
             current_app.logger.info("Error: unable to load repository table from mongodb", exc_info=True)
             return repositories
 
-    def concat_files(self):
+    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, from_field = None, fullrun= None):
         #concatenate files for primo and librarycloud
+        concat_opts = ""
+        if (harvestset != None):
+            concat_opts = concat_opts + " -s " + harvestset
+        if (harvestdate != None): 
+            concat_opts = concat_opts + " -d " + harvestdate
+        if (until_field != None):
+            concat_opts = concat_opts + " -u " + until_field
+        if (from_field != None):
+            concat_opts = concat_opts + " -f " + from_field
+        if (fullrun == None):
+            concat_opts = concat_opts + " -l " + fullrun
         try:
-            subprocess.check_call([concat_script_path])
+            subprocess.check_call([concat_script_path + concat_opts])
             current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
@@ -573,12 +597,18 @@ Update job timestamp file"""
                 if (size == "incr"):
                     subprocess.check_call([publish_lc_incr_script_path])
                 elif (size == "full"):
-                    subprocess.check_call([publish_lc_full_script_path])
+                    if (harvestset != None):
+                        subprocess.check_call([publish_lc_full_set_script_path + " " + harvestset])
+                    else:
+                        subprocess.check_call([publish_lc_full_script_path])
             elif (dest == "primo"):
                 if (size == "incr"):
                     subprocess.check_call([publish_primo_incr_script_path])
                 elif (size == "full"):
-                    subprocess.check_call([publish_primo_full_script_path])
+                    if (harvestset != None):
+                        subprocess.check_call([publish_primo_full_set_script_path + " " + harvestset])
+                    else:
+                        subprocess.check_call([publish_primo_full_script_path])
             return True
         except Exception as e:
             current_app.logger.error(dest + " " + size + " export script error", exc_info=True)

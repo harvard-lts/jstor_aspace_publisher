@@ -40,16 +40,20 @@ Configuration files in the adjacent directory are used.
 parser = argparse.ArgumentParser(description=usageMsg)
 parser.add_argument("export", choices=['incr', 'full'], help="incr (incremental) or full Export")
 parser.add_argument("-p", "--project", choices=['lc', 'primo'], help="lc (Library Cloud) or primo")
+parser.add_argument("-s", "--setid", help="set id", required=False)
 parser.add_argument("-v", "--verbose", action = 'store_true', help = "Run with verbose output")
 args = parser.parse_args()
 
 export   = args.export
 verbose  = args.verbose
 notifyJM = False
+setId = args.setid
 
 
 if args.project:
 	confFile = f'{confDir}/via_{export}_{args.project}_export.yaml'
+	if args.setid:
+		confFile = f'{confDir}/via_{export}_{args.project}_set_export.yaml'
 	jobName = f'VIA {export} {args.project} export'
 else:
 	confFile = f'{confDir}/via_{export}_export.yaml'
