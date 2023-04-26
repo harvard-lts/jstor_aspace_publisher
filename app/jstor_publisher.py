@@ -16,6 +16,7 @@ publish_lc_incr_script_path= os.environ.get('PUBLISH_LC_INCR_SCRIPT_PATH','/home
 publish_lc_full_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full.sh')
 publish_primo_incr_script_path= os.environ.get('PUBLISH_PRIMO_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-incr.sh')
 publish_primo_full_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full.sh')
+publish_primo_full_set_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SET_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full-set.sh')
 via_script_path = os.environ.get('VIA_SCRIPT_PATH','/home/jstorforumadmltstools/via/bin/via_export.py')
 weed_script_path = os.environ.get('WEED_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/weed_files.py')
 try:
@@ -152,6 +153,17 @@ Update job timestamp file"""
             except Exception as err:
                 current_app.logger.error("Error: unable to publish aspace records", exc_info=True)
 
+        until_field = None
+        if 'until' in request_json:
+            until_field = request_json["until"].replace("-", "")
+
+        from_field = None
+        if 'from' in request_json:
+            from_field = request_json["from"].replace("-", "")
+        
+        harvest_date = None
+        if 'harvestdate' in request_json:
+            harvest_date = request_json["harvestdate"].replace("-", "")
 
         #integration test: write small record to mongo to prove connectivity
         integration_test = False
@@ -429,7 +441,7 @@ Update job timestamp file"""
                                 current_app.logger.error("Mongo error writing deleted records", exc_info=True)
             lcPublishSuccess = False
             primoPublishSuccess = False
-            concatFileSuccess = self.concat_files()
+            concatFileSuccess = self.concat_files(harvestset, harvest_date, until_field, from_field)
 
             if (concatFileSuccess):
                 #call via export incremental script for Primo (Hollis Inages)
@@ -556,10 +568,19 @@ Update job timestamp file"""
             current_app.logger.info("Error: unable to load repository table from mongodb", exc_info=True)
             return repositories
 
-    def concat_files(self):
+    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, from_field = None):
         #concatenate files for primo and librarycloud
+        concat_opts = ""
+        if (harvestset != None):
+            concat_opts = concat_opts + " -s " + harvestset
+        if (harvestdate != None): 
+            concat_opts = concat_opts + " -d " + harvestdate
+        if (until_field != None):
+            concat_opts = concat_opts + " -u " + until_field
+        if (from_field != None):
+            concat_opts = concat_opts + " -f " + from_field
         try:
-            subprocess.check_call([concat_script_path])
+            subprocess.check_call([concat_script_path + concat_opts])
             current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
