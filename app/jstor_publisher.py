@@ -14,6 +14,7 @@ ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
 concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
 publish_lc_incr_script_path= os.environ.get('PUBLISH_LC_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-incr.sh')
 publish_lc_full_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full.sh')
+publish_lc_full_set_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full-set.sh')
 publish_primo_incr_script_path= os.environ.get('PUBLISH_PRIMO_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-incr.sh')
 publish_primo_full_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full.sh')
 publish_primo_full_set_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SET_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full-set.sh')
@@ -430,8 +431,8 @@ Update job timestamp file"""
                                 setspec, identifier = (filename[:-4]).split("_", 1)
                             except:
                                 continue
-                            repository_name = self.repositories[setSpec]["displayname"]
-                            repo_short_name = self.repositories[setSpec]["shortname"]
+                            repository_name = self.repositories[setspec]["displayname"]
+                            repo_short_name = self.repositories[setspec]["shortname"]
                             try:
                                 self.write_record(job_ticket_id, identifier, harvestdate, setspec, repository_name, repo_short_name, 
                                     status, record_collection_name, success, "lc", mongo_db) 
@@ -568,7 +569,7 @@ Update job timestamp file"""
             current_app.logger.info("Error: unable to load repository table from mongodb", exc_info=True)
             return repositories
 
-    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, from_field = None):
+    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, from_field = None, fullrun= None):
         #concatenate files for primo and librarycloud
         concat_opts = ""
         if (harvestset != None):
@@ -579,6 +580,8 @@ Update job timestamp file"""
             concat_opts = concat_opts + " -u " + until_field
         if (from_field != None):
             concat_opts = concat_opts + " -f " + from_field
+        if (fullrun == None):
+            concat_opts = concat_opts + " -l " + fullrun
         try:
             subprocess.check_call([concat_script_path + concat_opts])
             current_app.logger.info("LC and Primo file concatenation successful")
@@ -594,12 +597,18 @@ Update job timestamp file"""
                 if (size == "incr"):
                     subprocess.check_call([publish_lc_incr_script_path])
                 elif (size == "full"):
-                    subprocess.check_call([publish_lc_full_script_path])
+                    if (harvestset != None):
+                        subprocess.check_call([publish_lc_full_set_script_path + " " + harvestset])
+                    else:
+                        subprocess.check_call([publish_lc_full_script_path])
             elif (dest == "primo"):
                 if (size == "incr"):
                     subprocess.check_call([publish_primo_incr_script_path])
                 elif (size == "full"):
-                    subprocess.check_call([publish_primo_full_script_path])
+                    if (harvestset != None):
+                        subprocess.check_call([publish_primo_full_set_script_path + " " + harvestset])
+                    else:
+                        subprocess.check_call([publish_primo_full_script_path])
             return True
         except Exception as e:
             current_app.logger.error(dest + " " + size + " export script error", exc_info=True)
