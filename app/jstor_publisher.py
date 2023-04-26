@@ -133,27 +133,7 @@ Update job timestamp file"""
         harvestset = None
         if 'harvestset' in request_json:
             harvestset = request_json["harvestset"]
-
-        jstorforum = False
-        if 'jstorforum' in request_json:
-            current_app.logger.info("running jstorforum publisher")
-            jstorforum = request_json['jstorforum']
-        if jstorforum:
-            try:
-                self.do_publish('jstorforum', harvestset, job_ticket_id)
-            except Exception as err:
-                current_app.logger.error("Error: unable to publish jstorforum records", exc_info=True)
-
-        aspace = False
-        if 'aspace' in request_json:
-            current_app.logger.info("running aspace transform")
-            aspace = request_json['aspace']
-        if aspace:
-            try:
-                self.do_publish('aspace', None, job_ticket_id)
-            except Exception as err:
-                current_app.logger.error("Error: unable to publish aspace records", exc_info=True)
-
+        
         until_field = None
         if 'until' in request_json:
             until_field = request_json["until"].replace("-", "")
@@ -166,6 +146,26 @@ Update job timestamp file"""
         if 'harvestdate' in request_json:
             harvest_date = request_json["harvestdate"].replace("-", "")
 
+        jstorforum = False
+        if 'jstorforum' in request_json:
+            current_app.logger.info("running jstorforum publisher")
+            jstorforum = request_json['jstorforum']
+        if jstorforum:
+            try:
+                self.do_publish('jstorforum', harvestset, job_ticket_id, False, harvest_date, until_field)
+            except Exception as err:
+                current_app.logger.error("Error: unable to publish jstorforum records", exc_info=True)
+
+        aspace = False
+        if 'aspace' in request_json:
+            current_app.logger.info("running aspace transform")
+            aspace = request_json['aspace']
+        if aspace:
+            try:
+                self.do_publish('aspace', None, job_ticket_id, False, harvest_date, until_field)
+            except Exception as err:
+                current_app.logger.error("Error: unable to publish aspace records", exc_info=True)
+
         #integration test: write small record to mongo to prove connectivity
         integration_test = False
         if ('integration_test' in request_json):
@@ -174,12 +174,12 @@ Update job timestamp file"""
             current_app.logger.info("running integration test")
 
             try:
-                self.do_publish('jstorforum', harvestset, job_ticket_id, True)
+                self.do_publish('jstorforum', harvestset, job_ticket_id, True, harvest_date, until_field)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish jstorforum records in itest", exc_info=True)
 
             try:
-                self.do_publish('aspace', None, job_ticket_id, True)
+                self.do_publish('aspace', None, job_ticket_id, True, harvest_date, until_field)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish aspace records in itest", exc_info=True)
             
@@ -208,7 +208,7 @@ Update job timestamp file"""
         
         return result
 
-    def do_publish(self, jobname, harvestset, job_ticket_id, itest=False):
+    def do_publish(self, jobname, harvestset, job_ticket_id, itest=False, harvest_date=None, until_field=None):
         if itest:
             configfile = os.getenv("JSTOR_HARVEST_TEST_CONFIG")
         else:
