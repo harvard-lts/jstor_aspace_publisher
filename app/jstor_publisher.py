@@ -568,7 +568,7 @@ Update job timestamp file"""
 
     def concat_files(self, harvestset = None, harvestdate = None, until_field = None, fullrun= None):
         #concatenate files for primo and librarycloud
-        concat_opts = ""
+        concat_opts = " "
         if (harvestset != None):
             concat_opts = concat_opts + " -s " + harvestset
         if (harvestdate != None): 
