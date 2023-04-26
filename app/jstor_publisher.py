@@ -568,7 +568,7 @@ Update job timestamp file"""
 
     def concat_files(self, harvestset = None, harvestdate = None, until_field = None, fullrun= None):
         #concatenate files for primo and librarycloud
-        concat_opts = " "
+        concat_opts = ""
         if (harvestset != None):
             concat_opts = concat_opts + " -s " + harvestset
         if (harvestdate != None): 
@@ -578,7 +578,7 @@ Update job timestamp file"""
         if (fullrun != None):
             concat_opts = concat_opts + " -l " + fullrun
         try:
-            subprocess.check_call([concat_script_path + concat_opts])
+            subprocess.check_call([concat_script_path + concat_opts], shell=True)
             current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
