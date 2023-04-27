@@ -593,7 +593,7 @@ Update job timestamp file"""
                     subprocess.check_call([publish_lc_incr_script_path])
                 elif (size == "full"):
                     if (harvestset != None):
-                        subprocess.check_call([publish_lc_full_set_script_path + " " + harvestset])
+                        subprocess.check_call([publish_lc_full_set_script_path + " " + harvestset], shell=True)
                     else:
                         subprocess.check_call([publish_lc_full_script_path])
             elif (dest == "primo"):
@@ -601,7 +601,7 @@ Update job timestamp file"""
                     subprocess.check_call([publish_primo_incr_script_path])
                 elif (size == "full"):
                     if (harvestset != None):
-                        subprocess.check_call([publish_primo_full_set_script_path + " " + harvestset])
+                        subprocess.check_call([publish_primo_full_set_script_path + " " + harvestset], shell=True)
                     else:
                         subprocess.check_call([publish_primo_full_script_path])
             return True
