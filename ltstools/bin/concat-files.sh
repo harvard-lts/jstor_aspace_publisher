@@ -34,24 +34,23 @@ UNTILDATE=${u}
 FROMDATE=${f}
 FULLRUN=${l}
 
-if [ -n $HARVESTDATE ] && [ -n $UNTILDATE ]
+if [ -n "$HARVESTDATE" ] && [ -n "$UNTILDATE" ]
 then
   DATESTAMP=$HARVESTDATE_$UNTILDATE
-elif [ -n $HARVESTDATE ] && [ -z $UNTILDATE ]
+elif [ -n "$HARVESTDATE" ] && [ -z "$UNTILDATE" ]
 then
   DATESTAMP=$HARVESTDATE
-elif [ -z $HARVESTDATE ] && [ -n $UNTILDATE ]
+elif [ -z "$HARVESTDATE" ] && [ -n "$UNTILDATE" ]
 then
   DATESTAMP=$TODAYSDATE_$UNTILDATE
 else
-then
   DATESTAMP=$TODAYSDATE
 fi
 
 
-if [ -n $SETNAME ]
+if [ -n "$SETNAME" ]
 then
-  if [ -n $FULLRUN ]
+  if [ -n "$FULLRUN" ]
   then
     #LIBRARYCLOUD
     TARBALL=viafull_$SETNAME_$DATESTAMP.tar.gz
@@ -80,7 +79,7 @@ then
     rm -f /tmp/JSTORFORUM/export/primo/via_export_incr_$SETNAME_$DATESTAMP.tmp
   fi
 else
-  if [ -n $FULLRUN ]
+  if [ -n "$FULLRUN" ]
   then
     TARBALL=viafull_$TODAYSDATE.tar.gz
     #LIBRARYCLOUD
