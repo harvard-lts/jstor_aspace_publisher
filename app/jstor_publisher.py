@@ -227,6 +227,7 @@ Update job timestamp file"""
         dropsDir = os.getenv("JSTOR_DROPS_DIR")
         deletesDir = os.getenv("JSTOR_DELETES_DIR")
         aspaceDir = os.getenv("JSTOR_ASPACE_DIR")
+        fullSetDir = None
         directories = [harvestDir, transformDir]
         mongo_url = os.environ.get('MONGO_URL')
         mongo_dbname = os.environ.get('MONGO_DBNAME')
@@ -319,6 +320,7 @@ Update job timestamp file"""
                         elif  setSpec == harvestset: 
                             current_app.logger.info("Publishing for only one set: " + setSpec)
                             current_app.logger.info("looking in current path: " + currentPath)
+                            fullSetDir = opDir
                             if os.path.exists(currentPath):
                                 if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
                                     current_app.logger.info("Publishing set: " + opDir)
@@ -447,16 +449,16 @@ Update job timestamp file"""
                                 current_app.logger.error("Mongo error writing deleted records", exc_info=True)
             lcPublishSuccess = False
             primoPublishSuccess = False
-            concatFileSuccess = self.concat_files(harvestset, harvest_date, until_field, job_ticket_id)
+            concatFileSuccess = self.concat_files(fullSetDir, harvest_date, until_field, job_ticket_id)
 
             if (concatFileSuccess):
                 datestamp = datetime.today().strftime('%Y%m%d')
                 #call via export incremental script for Primo (Hollis Inages)
                 if (publish_to_primo):
                     current_app.logger.info("Publishing to Primo...")
-                    if (harvestset != None):
+                    if (fullSetDir != None):
                         #$JOBTICKETID_$SETNAME_$DATESTAMP
-                        filename = job_ticket_id + "_" + harvestset + "_" + datestamp
+                        filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
                         primoPublishSuccess = self.export_files("full", "primo", filename, job_ticket_id)
                     else:
                         primoPublishSuccess = self.export_files("incr", "primo")
@@ -470,9 +472,9 @@ Update job timestamp file"""
                     #call via export incremental script for Librarycloud
                 if (publish_to_lc):
                     current_app.logger.info("Publishing to Librarycloud...")
-                    if (harvestset != None):
+                    if (fullSetDir != None):
                         #$JOBTICKETID_$SETNAME_$DATESTAMP
-                        filename = job_ticket_id + "_" + harvestset + "_" + datestamp
+                        filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
                         lcPublishSuccess = self.export_files("full", "lc", filename, job_ticket_id)
                     else:
                         lcPublishSuccess = self.export_files("incr", "lc")
