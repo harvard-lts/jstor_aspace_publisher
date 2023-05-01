@@ -165,6 +165,7 @@ def chunk_full_export(configSets):
 		notifyJM.log('info', f'Found {exportDir}/{fullExportFile}. Start chunking.', verbose)
 		notifyJM.log('info', f'processing full set export for job ticket {jobTicketId}.', verbose)
 		output = None
+		fileCount = 0
 		with open(fullExportFile) as input:
 			for line in input:
 			
