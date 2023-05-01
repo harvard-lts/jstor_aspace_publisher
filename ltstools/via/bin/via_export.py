@@ -40,7 +40,8 @@ Configuration files in the adjacent directory are used.
 parser = argparse.ArgumentParser(description=usageMsg)
 parser.add_argument("export", choices=['incr', 'full'], help="incr (incremental) or full Export")
 parser.add_argument("-p", "--project", choices=['lc', 'primo'], help="lc (Library Cloud) or primo")
-parser.add_argument("-s", "--setid", help="set id", required=False)
+parser.add_argument("-f", "--file", help="full filename", required=False)
+parser.add_argument("-j", "--jobid", help="job id of export", required=False)
 parser.add_argument("-v", "--verbose", action = 'store_true', help = "Run with verbose output")
 args = parser.parse_args()
 
@@ -48,12 +49,12 @@ export   = args.export
 verbose  = args.verbose
 notifyJM = False
 setId = args.setid
+fullFilename = args.file
+jobTicketId = args.jobid
 
 
 if args.project:
 	confFile = f'{confDir}/via_{export}_{args.project}_export.yaml'
-	if args.setid:
-		confFile = f'{confDir}/via_{export}_{args.project}_set_export.yaml'
 	jobName = f'VIA {export} {args.project} export'
 else:
 	confFile = f'{confDir}/via_{export}_export.yaml'
@@ -62,8 +63,12 @@ else:
 jobCode        = f'via_export_{export}'
 dateStamp      = get_date_time_stamp('day')
 delExportFile  = f'via_export_del_{dateStamp}.xml'
-fullExportFile = f'viafull_{dateStamp}.xml'
 chunkedExports = "viaExport_20*_[0-9][0-9][0-9].xml"
+
+if args.file:
+	fullExportFile = f'viafull_{fullFilename}.xml'
+else:
+	fullExportFile = f'viafull_{dateStamp}.xml'
 
 #
 # Main program
@@ -194,7 +199,10 @@ def chunk_full_export(configSets):
 				
 		# Pack up (tar and gzip) export files
 		try:
-			tarfileName = f'viafull_{dateStamp}.tar'				
+			tarfileName = f'viafull_{dateStamp}.tar'
+			if (jobTicketId != None):
+				tarfileName = f'viafull_{jobTicketId}_{dateStamp}.tar'
+
 			with tarfile.open(tarfileName, "w") as tarFile:
 				for newFile in glob(chunkedExports):
 					tarFile.add(newFile)
