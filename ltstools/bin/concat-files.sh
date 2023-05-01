@@ -10,25 +10,20 @@ TARBALL=viaIncr_$TODAYSDATE.tar.gz
 while getopts ":s:d:u:i:" o; do
   case "${o}" in
      s)
-       s=${OPTARG}
+       SETNAME=${OPTARG}
        ;;
      d)
-       d=${OPTARG}
+       HARVESTDATE=${OPTARG}
        ;;
      u)
-       u=${OPTARG}
+       UNTILDATE=${OPTARG}
        ;;
      i)
-       i=${OPTARG}
+       JOBTICKETID=${OPTARG}
        ;;
   esac
 done
 shift $((OPTIND-1))
-
-SETNAME=${s}
-HARVESTDATE=${d}
-UNTILDATE=${u}
-JOBTICKETID=${i}
 
 # if [ -n "$HARVESTDATE" ] && [ -n "$UNTILDATE" ]
 # then
@@ -47,17 +42,17 @@ DATESTAMP=$TODAYSDATE
 if [ -n "$SETNAME" ] #full harvest of a set
 then
   #LIBRARYCLOUD
-  TARBALL=viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tar.gz
-  find /tmp/JSTORFORUM/transformed/$SETNAME -type f |  grep -v 'hollis' | grep -v 'aspace'| xargs cat > /tmp/JSTORFORUM/export/lc/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tmp
-  cat /home/jstorforumadm/ltstools/conf/viacollhead.txt /tmp/JSTORFORUM/export/lc/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tmp /home/jstorforumadm/ltstools/conf/viacolltail.txt > /tmp/JSTORFORUM/export/lc/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.xml
+  TARBALL=viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tar.gz
+  find /tmp/JSTORFORUM/transformed/$SETNAME -type f |  grep -v 'hollis' | grep -v 'aspace'| xargs cat > /tmp/JSTORFORUM/export/lc/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
+  cat /home/jstorforumadm/ltstools/conf/viacollhead.txt /tmp/JSTORFORUM/export/lc/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp /home/jstorforumadm/ltstools/conf/viacolltail.txt > /tmp/JSTORFORUM/export/lc/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.xml
   #tar -czvf /tmp/JSTORFORUM/export/lc/$TARBALL /tmp/JSTORFORUM/export/lc/viafull_$SETNAME_$DATESTAMP.xml
-  rm -f /tmp/JSTORFORUM/export/lc/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tmp
+  rm -f /tmp/JSTORFORUM/export/lc/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
 
    #PRIMO
-   find /tmp/JSTORFORUM/transformed/$SETNAME -type f | grep 'hollis' | xargs cat > /tmp/JSTORFORUM/export/primo/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tmp
-   cat /home/jstorforumadm/ltstools/conf/taminohead.txt /tmp/JSTORFORUM/export/primo/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tmp /home/jstorforumadm/ltstools/conf/taminotail.txt > /tmp/JSTORFORUM/export/primo/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.xml
+   find /tmp/JSTORFORUM/transformed/$SETNAME -type f | grep 'hollis' | xargs cat > /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
+   cat /home/jstorforumadm/ltstools/conf/taminohead.txt /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp /home/jstorforumadm/ltstools/conf/taminotail.txt > /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.xml
    #tar -czvf /tmp/JSTORFORUM/export/primo/$TARBALL /tmp/JSTORFORUM/export/primo/viafull_$SETNAME_$DATESTAMP.xml
-   rm -f /tmp/JSTORFORUM/export/primo/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tmp
+   rm -f /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
 else #nightly incremental harvest 
   TARBALL=viaIncr_$TODAYSDATE.tar.gz
   #LIBRARYCLOUD
