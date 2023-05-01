@@ -270,7 +270,7 @@ def prep_incr_export(configSets, dateStamp):
 		# Open each export file and grab any record IDs it might contain
 		recordIds = []
 		os.chdir(localDir)
-		for file in glob('*.xml'):
+		for file in glob('via_export_incr_*.xml'):
 			with open(file) as input:
 				for line in input:
 					match = reRecordId.match(line)
