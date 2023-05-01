@@ -602,6 +602,7 @@ Update job timestamp file"""
             concat_opts = concat_opts + " -i " + job_ticket_id
         try:
             subprocess.check_call([concat_script_path + concat_opts], shell=True)
+            current_app.logger.info(concat_script_path + concat_opts)
             current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
