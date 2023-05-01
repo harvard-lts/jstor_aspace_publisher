@@ -590,16 +590,18 @@ Update job timestamp file"""
     def concat_files(self, harvestset = None, harvestdate = None, until_field = None, job_ticket_id = None):
         #concatenate files for primo and librarycloud
         concat_opts = ""
-        if (harvestset != None):
-            concat_opts = concat_opts + " -s " + harvestset
-        if (harvestdate != None): 
-            concat_opts = concat_opts + " -d " + harvestdate
-        if (until_field != None):
-            concat_opts = concat_opts + " -u " + until_field
-        if (job_ticket_id != None):
-            concat_opts = concat_opts + " -i " + job_ticket_id
         try:
-            subprocess.check_call([concat_script_path + concat_opts], shell=True)
+            if harvestset != None):
+                concat_opts = concat_opts + " -s " + harvestset
+                if (harvestdate != None): 
+                    concat_opts = concat_opts + " -d " + harvestdate
+                if (until_field != None):
+                    concat_opts = concat_opts + " -u " + until_field
+                if (job_ticket_id != None):
+                    concat_opts = concat_opts + " -i " + job_ticket_id
+                subprocess.check_call([concat_script_path + concat_opts], shell=True)
+            else:
+                subprocess.check_call([concat_script_path], shell=True)
             current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
