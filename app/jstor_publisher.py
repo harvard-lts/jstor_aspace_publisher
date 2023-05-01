@@ -453,12 +453,12 @@ Update job timestamp file"""
 
             if (concatFileSuccess):
                 datestamp = datetime.today().strftime('%Y%m%d')
+                #$JOBTICKETID_$SETNAME_$DATESTAMP
+                filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
                 #call via export incremental script for Primo (Hollis Inages)
                 if (publish_to_primo):
                     current_app.logger.info("Publishing to Primo...")
                     if (fullSetDir != None):
-                        #$JOBTICKETID_$SETNAME_$DATESTAMP
-                        filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
                         primoPublishSuccess = self.export_files("full", "primo", filename, job_ticket_id)
                     else:
                         primoPublishSuccess = self.export_files("incr", "primo")
@@ -473,8 +473,6 @@ Update job timestamp file"""
                 if (publish_to_lc):
                     current_app.logger.info("Publishing to Librarycloud...")
                     if (fullSetDir != None):
-                        #$JOBTICKETID_$SETNAME_$DATESTAMP
-                        filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
                         lcPublishSuccess = self.export_files("full", "lc", filename, job_ticket_id)
                     else:
                         lcPublishSuccess = self.export_files("incr", "lc")
