@@ -455,9 +455,9 @@ Update job timestamp file"""
                 datestamp = datetime.today().strftime('%Y%m%d')
                 #call via export incremental script for Primo (Hollis Inages)
                 if (publish_to_primo):
-                    filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
                     current_app.logger.info("Publishing to Primo...")
                     if (fullSetDir != None):
+                        filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
                         primoPublishSuccess = self.export_files("full", "primo", filename, job_ticket_id)
                     else:
                         primoPublishSuccess = self.export_files("incr", "primo")
