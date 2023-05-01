@@ -163,6 +163,7 @@ def chunk_full_export(configSets):
 	# Chunk today's full export if found
 	if os.path.isfile(fullExportFile) and os.path.getsize(fullExportFile) > 0:
 		notifyJM.log('info', f'Found {exportDir}/{fullExportFile}. Start chunking.', verbose)
+		notifyJM.log('info', f'processing full set export for job ticket {jobTicketId}.', verbose)
 		output = None
 		with open(fullExportFile) as input:
 			for line in input:
