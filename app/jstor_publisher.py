@@ -181,8 +181,9 @@ Update job timestamp file"""
 
             try: #full set harvest - todo: change these params
                 hdate = datetime.today().strftime('%Y%m%d')
-                u_date harvestdate = datetime.today().strftime('%Y%m%d')
+                u_date = datetime.today().strftime('%Y%m%d')
                 set_id = "713"
+                current_app.logger.info("testing full set publish")
                 self.do_publish('jstorforum', set_id, job_ticket_id, True, hdate, u_date)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish full jstorforum set in itest", exc_info=True)
