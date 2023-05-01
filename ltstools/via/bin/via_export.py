@@ -48,7 +48,6 @@ args = parser.parse_args()
 export   = args.export
 verbose  = args.verbose
 notifyJM = False
-setId = args.setid
 fullFilename = args.file
 jobTicketId = args.jobid
 
