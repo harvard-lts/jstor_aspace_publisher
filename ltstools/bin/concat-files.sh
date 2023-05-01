@@ -59,7 +59,7 @@ then
    #tar -czvf /tmp/JSTORFORUM/export/primo/$TARBALL /tmp/JSTORFORUM/export/primo/viafull_$SETNAME_$DATESTAMP.xml
    rm -f /tmp/JSTORFORUM/export/primo/viafull_$JOBTICKETID_$SETNAME_$DATESTAMP.tmp
 else #nightly incremental harvest 
-  TARBALL=viaIncr_$JOBTICKETID_$TODAYSDATE.tar.gz
+  TARBALL=viaIncr_$TODAYSDATE.tar.gz
   #LIBRARYCLOUD
   find /tmp/JSTORFORUM/transformed -type f |  grep -v 'hollis' | grep -v 'aspace'| xargs cat > /tmp/JSTORFORUM/export/lc/via_export_incr_$TODAYSDATE.tmp
   cat /home/jstorforumadm/ltstools/conf/viacollhead.txt /tmp/JSTORFORUM/export/lc/via_export_incr_$TODAYSDATE.tmp /home/jstorforumadm/ltstools/conf/viacolltail.txt > /tmp/JSTORFORUM/export/lc/via_export_incr_$TODAYSDATE.xml
