@@ -591,7 +591,7 @@ Update job timestamp file"""
         #concatenate files for primo and librarycloud
         concat_opts = ""
         try:
-            if harvestset != None):
+            if (harvestset != None):
                 concat_opts = concat_opts + " -s " + harvestset
                 if (harvestdate != None): 
                     concat_opts = concat_opts + " -d " + harvestdate
