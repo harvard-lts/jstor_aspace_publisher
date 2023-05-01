@@ -194,7 +194,8 @@ def chunk_full_export(configSets):
 					continue
 
 				# Write out current line
-				output.write(line)
+				if (output != None):
+					output.write(line)
 									
 		notifyJM.log('pass', f'{recordCount} {jobName} records were chunked into {fileCount} files', verbose)
 				
