@@ -125,6 +125,7 @@ def run_main():
 
 def chunk_full_export(configSets):
 	global notifyJM
+	xmlHeader	   = '<viaCollection>'
 	xmlFooter      = '</viaCollection>'
 	recordCount    = 0
 	recordsPerFile = 20000
