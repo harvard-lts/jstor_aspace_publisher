@@ -94,8 +94,8 @@ def run_main():
 		quit()
 
 	# Chunk files if export is full
-	if export == 'full':
-		sendExport = chunk_full_export(configSets)
+	#if export == 'full':
+	#	sendExport = chunk_full_export(configSets)
 
 	# Compile and packup an xml file for any deleted records
 	elif export == 'incr':
