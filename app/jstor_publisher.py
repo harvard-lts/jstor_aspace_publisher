@@ -316,6 +316,14 @@ Update job timestamp file"""
                                         primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
+                            
+                            #update harvest record
+                            try:
+                                if (baseDir == transformDir):
+                                    self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                        repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                            except Exception as e:
+                                current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True)
 
                         elif  setSpec == harvestset: 
                             current_app.logger.info("Publishing for only one set: " + setSpec)
@@ -373,13 +381,13 @@ Update job timestamp file"""
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
-                        #update harvest record
-                        try:
-                            if (baseDir == transformDir):
-                                self.write_harvest(job_ticket_id, harvestdate, setSpec, 
-                                    repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
-                        except Exception as e:
-                            current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True) 
+                            #update harvest record
+                            try:
+                                if (baseDir == transformDir):
+                                    self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                        repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                            except Exception as e:
+                                current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True) 
 
         #publish to Aspace
         #if jobname == 'aspace' and jobname == job["jobName"]:  
