@@ -179,10 +179,14 @@ Update job timestamp file"""
             except Exception as err:
                 current_app.logger.error("Error: unable to publish aspace records in itest", exc_info=True)
 
-            try: #full set harvest - todo: change these params
+            try: #full set harvest
+                configfile = os.getenv("JSTOR_HARVEST_TEST_CONFIG")
+                with open(configfile) as f:
+                    harvtestjson = f.read()
+                testconfig = json.loads(harvtestjson)
                 hdate = datetime.today().strftime('%Y%m%d')
                 u_date = datetime.today().strftime('%Y%m%d')
-                set_id = "713"
+                set_id = testconfig[0]["harvests"]["sets"]["setSpec"]
                 current_app.logger.info("testing full set publish")
                 self.do_publish('jstorforum', set_id, job_ticket_id, True, hdate, u_date)
             except Exception as err:
