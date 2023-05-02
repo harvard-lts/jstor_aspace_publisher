@@ -98,7 +98,7 @@ def run_main():
 	#	sendExport = chunk_full_export(configSets)
 
 	# Compile and packup an xml file for any deleted records
-	elif export == 'incr':
+	if export == 'incr':
 		prep_incr_export(configSets, dateStamp)
 
 	# Send files to remote systems
