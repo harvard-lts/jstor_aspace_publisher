@@ -306,6 +306,14 @@ Update job timestamp file"""
                                                     status, record_collection_name, success, destination, mongo_db, err)    
                                             except Exception as e:
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier, exc_info=True)
+                                    #update harvest record
+                                    try:
+                                        if (baseDir == transformDir):
+                                            self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                                repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                                    except Exception as e:
+                                        current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True)
+
 
                             if (os.path.exists(hollisTransformedPath) and (baseDir == transformDir)): #gather list of ids that will go to hollis (primo)
                                 current_app.logger.info("looking for ids to be published "+
@@ -317,14 +325,6 @@ Update job timestamp file"""
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
                             
-                            #update harvest record
-                            try:
-                                if (baseDir == transformDir):
-                                    self.write_harvest(job_ticket_id, harvestdate, setSpec, 
-                                        repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
-                            except Exception as e:
-                                current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True)
-
                         elif  setSpec == harvestset: 
                             current_app.logger.info("Publishing for only one set: " + setSpec)
                             current_app.logger.info("looking in current path: " + currentPath)
