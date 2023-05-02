@@ -40,20 +40,20 @@ Configuration files in the adjacent directory are used.
 parser = argparse.ArgumentParser(description=usageMsg)
 parser.add_argument("export", choices=['incr', 'full'], help="incr (incremental) or full Export")
 parser.add_argument("-p", "--project", choices=['lc', 'primo'], help="lc (Library Cloud) or primo")
-parser.add_argument("-s", "--setid", help="set id", required=False)
+parser.add_argument("-f", "--file", help="full filename", required=False)
+parser.add_argument("-j", "--jobid", help="job id of export", required=False)
 parser.add_argument("-v", "--verbose", action = 'store_true', help = "Run with verbose output")
 args = parser.parse_args()
 
 export   = args.export
 verbose  = args.verbose
 notifyJM = False
-setId = args.setid
+fullFilename = args.file
+jobTicketId = args.jobid
 
 
 if args.project:
 	confFile = f'{confDir}/via_{export}_{args.project}_export.yaml'
-	if args.setid:
-		confFile = f'{confDir}/via_{export}_{args.project}_set_export.yaml'
 	jobName = f'VIA {export} {args.project} export'
 else:
 	confFile = f'{confDir}/via_{export}_export.yaml'
@@ -62,8 +62,12 @@ else:
 jobCode        = f'via_export_{export}'
 dateStamp      = get_date_time_stamp('day')
 delExportFile  = f'via_export_del_{dateStamp}.xml'
-fullExportFile = f'viafull_{dateStamp}.xml'
 chunkedExports = "viaExport_20*_[0-9][0-9][0-9].xml"
+
+if args.file:
+	fullExportFile = f'viafull_{fullFilename}.xml'
+else:
+	fullExportFile = f'viafull_{dateStamp}.xml'
 
 #
 # Main program
@@ -90,11 +94,11 @@ def run_main():
 		quit()
 
 	# Chunk files if export is full
-	if export == 'full':
-		sendExport = chunk_full_export(configSets)
+	#if export == 'full':
+	#	sendExport = chunk_full_export(configSets)
 
 	# Compile and packup an xml file for any deleted records
-	elif export == 'incr':
+	if export == 'incr':
 		prep_incr_export(configSets, dateStamp)
 
 	# Send files to remote systems
@@ -121,6 +125,7 @@ def run_main():
 
 def chunk_full_export(configSets):
 	global notifyJM
+	xmlHeader	   = '<viaCollection>'
 	xmlFooter      = '</viaCollection>'
 	recordCount    = 0
 	recordsPerFile = 20000
@@ -159,6 +164,9 @@ def chunk_full_export(configSets):
 	# Chunk today's full export if found
 	if os.path.isfile(fullExportFile) and os.path.getsize(fullExportFile) > 0:
 		notifyJM.log('info', f'Found {exportDir}/{fullExportFile}. Start chunking.', verbose)
+		notifyJM.log('info', f'processing full set export for job ticket {jobTicketId}.', verbose)
+		output = None
+		fileCount = 0
 		with open(fullExportFile) as input:
 			for line in input:
 			
@@ -188,13 +196,17 @@ def chunk_full_export(configSets):
 					continue
 
 				# Write out current line
-				output.write(line)
+				if (output != None):
+					output.write(line)
 									
 		notifyJM.log('pass', f'{recordCount} {jobName} records were chunked into {fileCount} files', verbose)
 				
 		# Pack up (tar and gzip) export files
 		try:
-			tarfileName = f'viafull_{dateStamp}.tar'				
+			tarfileName = f'viafull_{dateStamp}.tar'
+			if (jobTicketId != None):
+				tarfileName = f'viafull_{jobTicketId}_{dateStamp}.tar'
+
 			with tarfile.open(tarfileName, "w") as tarFile:
 				for newFile in glob(chunkedExports):
 					tarFile.add(newFile)
@@ -258,7 +270,7 @@ def prep_incr_export(configSets, dateStamp):
 		# Open each export file and grab any record IDs it might contain
 		recordIds = []
 		os.chdir(localDir)
-		for file in glob('*.xml'):
+		for file in glob('via_export_incr_*.xml'):
 			with open(file) as input:
 				for line in input:
 					match = reRecordId.match(line)

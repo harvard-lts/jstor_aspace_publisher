@@ -14,7 +14,7 @@ ignore_dirs = harvest_ignore_dirs + transform_ignore_dirs
 concat_script_path= os.environ.get('CONCAT_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/concat-files.sh')
 publish_lc_incr_script_path= os.environ.get('PUBLISH_LC_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-incr.sh')
 publish_lc_full_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full.sh')
-publish_lc_full_set_script_path= os.environ.get('PUBLISH_LC_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full-set.sh')
+publish_lc_full_set_script_path= os.environ.get('PUBLISH_LC_FULL_SET_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-lc-full-set.sh')
 publish_primo_incr_script_path= os.environ.get('PUBLISH_PRIMO_INCR_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-incr.sh')
 publish_primo_full_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full.sh')
 publish_primo_full_set_script_path= os.environ.get('PUBLISH_PRIMO_FULL_SET_SCRIPT_PATH','/home/jstorforumadm/ltstools/bin/publish-primo-full-set.sh')
@@ -178,7 +178,16 @@ Update job timestamp file"""
                 self.do_publish('aspace', None, job_ticket_id, True, harvest_date, until_field)
             except Exception as err:
                 current_app.logger.error("Error: unable to publish aspace records in itest", exc_info=True)
-            
+
+            try: #full set harvest - todo: change these params
+                hdate = datetime.today().strftime('%Y%m%d')
+                u_date = datetime.today().strftime('%Y%m%d')
+                set_id = "713"
+                current_app.logger.info("testing full set publish")
+                self.do_publish('jstorforum', set_id, job_ticket_id, True, hdate, u_date)
+            except Exception as err:
+                current_app.logger.error("Error: unable to publish full jstorforum set in itest", exc_info=True)
+
             try:
                 mongo_url = os.environ.get('MONGO_URL')
                 mongo_dbname = os.environ.get('MONGO_DBNAME')
@@ -218,6 +227,7 @@ Update job timestamp file"""
         dropsDir = os.getenv("JSTOR_DROPS_DIR")
         deletesDir = os.getenv("JSTOR_DELETES_DIR")
         aspaceDir = os.getenv("JSTOR_ASPACE_DIR")
+        fullSetDir = None
         directories = [harvestDir, transformDir]
         mongo_url = os.environ.get('MONGO_URL')
         mongo_dbname = os.environ.get('MONGO_DBNAME')
@@ -296,6 +306,14 @@ Update job timestamp file"""
                                                     status, record_collection_name, success, destination, mongo_db, err)    
                                             except Exception as e:
                                                 current_app.logger.error("Mongo error writing " + setSpec + " record: " +  identifier, exc_info=True)
+                                    #update harvest record
+                                    try:
+                                        if (baseDir == transformDir):
+                                            self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                                repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                                    except Exception as e:
+                                        current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True)
+
 
                             if (os.path.exists(hollisTransformedPath) and (baseDir == transformDir)): #gather list of ids that will go to hollis (primo)
                                 current_app.logger.info("looking for ids to be published "+
@@ -306,10 +324,11 @@ Update job timestamp file"""
                                         primoRecord = {"job_ticket_id": job_ticket_id, "identifier": identifier, "status": "add_update", 
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
-
+                            
                         elif  setSpec == harvestset: 
                             current_app.logger.info("Publishing for only one set: " + setSpec)
                             current_app.logger.info("looking in current path: " + currentPath)
+                            fullSetDir = opDir
                             if os.path.exists(currentPath):
                                 if len(fnmatch.filter(os.listdir(currentPath), '*.xml')) > 0:
                                     current_app.logger.info("Publishing set: " + opDir)
@@ -362,13 +381,13 @@ Update job timestamp file"""
                                                 "harvestdate": harvestdate, "setSpec": setSpec, "repository_name": repository_name, "repo_short_name": repo_short_name}
                                         primoIds.append(primoRecord)
 
-                        #update harvest record
-                        try:
-                            if (baseDir == transformDir):
-                                self.write_harvest(job_ticket_id, harvestdate, setSpec, 
-                                    repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
-                        except Exception as e:
-                            current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True) 
+                            #update harvest record
+                            try:
+                                if (baseDir == transformDir):
+                                    self.write_harvest(job_ticket_id, harvestdate, setSpec, 
+                                        repository_name, repo_short_name, totalPublishCount, harvest_collection_name, mongo_db, jobname, publish_successful)
+                            except Exception as e:
+                                current_app.logger.error("Mongo error writing harvest record for : " +  setSpec, exc_info=True) 
 
         #publish to Aspace
         #if jobname == 'aspace' and jobname == job["jobName"]:  
@@ -438,14 +457,19 @@ Update job timestamp file"""
                                 current_app.logger.error("Mongo error writing deleted records", exc_info=True)
             lcPublishSuccess = False
             primoPublishSuccess = False
-            #TODO - get full run flag 
-            concatFileSuccess = self.concat_files(harvestset, harvest_date, until_field)
+            concatFileSuccess = self.concat_files(fullSetDir, harvest_date, until_field, job_ticket_id)
 
             if (concatFileSuccess):
+                datestamp = datetime.today().strftime('%Y%m%d')
                 #call via export incremental script for Primo (Hollis Inages)
                 if (publish_to_primo):
                     current_app.logger.info("Publishing to Primo...")
-                    primoPublishSuccess = self.export_files("incr", "primo")
+                    if (fullSetDir != None):
+                        filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
+                        primoPublishSuccess = self.export_files("full", "primo", filename, job_ticket_id)
+                    else:
+                        primoPublishSuccess = self.export_files("incr", "primo")
+
                     if (primoPublishSuccess):
                         current_app.logger.info("Publishing to Primo successful")
                     else:
@@ -455,7 +479,12 @@ Update job timestamp file"""
                     #call via export incremental script for Librarycloud
                 if (publish_to_lc):
                     current_app.logger.info("Publishing to Librarycloud...")
-                    lcPublishSuccess = self.export_files("incr", "lc")
+                    if (fullSetDir != None):
+                        filename = job_ticket_id + "_" + fullSetDir + "_" + datestamp
+                        lcPublishSuccess = self.export_files("full", "lc", filename, job_ticket_id)
+                    else:
+                        lcPublishSuccess = self.export_files("incr", "lc")
+
                     if (lcPublishSuccess):
                         current_app.logger.info("Publishing to Librarycloud successful")
                     else:
@@ -566,42 +595,46 @@ Update job timestamp file"""
             current_app.logger.info("Error: unable to load repository table from mongodb", exc_info=True)
             return repositories
 
-    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, fullrun= None):
+    def concat_files(self, harvestset = None, harvestdate = None, until_field = None, job_ticket_id = None):
         #concatenate files for primo and librarycloud
         concat_opts = ""
-        if (harvestset != None):
-            concat_opts = concat_opts + " -s " + harvestset
-        if (harvestdate != None): 
-            concat_opts = concat_opts + " -d " + harvestdate
-        if (until_field != None):
-            concat_opts = concat_opts + " -u " + until_field
-        if (fullrun != None):
-            concat_opts = concat_opts + " -l " + fullrun
         try:
-            subprocess.check_call([concat_script_path + concat_opts], shell=True)
+            if (harvestset != None):
+                concat_opts = concat_opts + " -s " + harvestset
+                if (harvestdate != None): 
+                    concat_opts = concat_opts + " -d " + harvestdate
+                if (until_field != None):
+                    concat_opts = concat_opts + " -u " + until_field
+                if (job_ticket_id != None):
+                    concat_opts = concat_opts + " -i " + job_ticket_id
+                subprocess.check_call([concat_script_path + concat_opts], shell=True)
+            else:
+                subprocess.check_call([concat_script_path], shell=True)
             current_app.logger.info("LC and Primo file concatenation successful")
             return True
         except Exception as e:
             current_app.logger.error("File concatenation failed: Primo and LC publish aborted", exc_info=True)
             return False
 
-    def export_files(self, size, dest):
+    def export_files(self, size, dest, filename=None, job_ticket_id=None):
         #call via export incremental script for Primo (Hollis Inages)
         try:
             if (dest == "lc"):
                 if (size == "incr"):
                     subprocess.check_call([publish_lc_incr_script_path])
                 elif (size == "full"):
-                    if (harvestset != None):
-                        subprocess.check_call([publish_lc_full_set_script_path + " " + harvestset], shell=True)
+                    if ((filename != None) and (job_ticket_id != None)):
+                        subprocess.check_call([publish_lc_full_set_script_path + " " 
+                          + filename + " " + job_ticket_id], shell=True)
                     else:
                         subprocess.check_call([publish_lc_full_script_path])
             elif (dest == "primo"):
                 if (size == "incr"):
                     subprocess.check_call([publish_primo_incr_script_path])
                 elif (size == "full"):
-                    if (harvestset != None):
-                        subprocess.check_call([publish_primo_full_set_script_path + " " + harvestset], shell=True)
+                    if ((filename != None) and (job_ticket_id != None)):
+                        subprocess.check_call([publish_primo_full_set_script_path + " " 
+                          + filename + " " + job_ticket_id], shell=True)
                     else:
                         subprocess.check_call([publish_primo_full_script_path])
             return True
