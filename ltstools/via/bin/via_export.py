@@ -270,13 +270,15 @@ def prep_incr_export(configSets, dateStamp):
 		# Open each export file and grab any record IDs it might contain
 		recordIds = []
 		os.chdir(localDir)
-		for file in glob('via_export_incr_*.xml'):
-			with open(file) as input:
-				for line in input:
-					match = reRecordId.match(line)
-					if match:
-						recordIds.append(match.group(1))
-						os.remove(file)
+		delFilenamePattern = r'^\d{3,4}_.*\.xml$'
+		for file in glob('*.xml'):
+			if re.match(delFilenamePattern , file):
+				with open(file) as input:
+					for line in input:
+						match = reRecordId.match(line)
+						if match:
+							recordIds.append(match.group(1))
+							os.remove(file)
 					
 		# Write file of deleted records if any were found
 		if len(recordIds) > 0:
