@@ -49,7 +49,7 @@ then
    rm -f /tmp/JSTORFORUM/export/lc/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
 
    #PRIMO
-   find /tmp/JSTORFORUM/transformed/$SETNAME -type f | grep 'hollis' | xargs cat > /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
+   find /tmp/JSTORFORUM/transformed/$SETNAME_hollis -type f | xargs cat > /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
    cat /home/jstorforumadm/ltstools/conf/taminohead.txt /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp /home/jstorforumadm/ltstools/conf/taminotail.txt > /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.xml
    tar -czvf /tmp/JSTORFORUM/export/primo/$TARBALL /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.xml
    rm -f /tmp/JSTORFORUM/export/primo/viafull_${JOBTICKETID}_${SETNAME}_${DATESTAMP}.tmp
