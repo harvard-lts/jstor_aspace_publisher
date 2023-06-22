@@ -2,9 +2,9 @@ from xml.dom import minidom
 import os, sys
 import pymongo
 from datetime import datetime
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 
-load_dotenv()
+#load_dotenv()
 # MongoDB connection settings
 mongo_url = os.environ.get('MONGO_URL')
 mongo_database =  os.environ.get('MONGO_DBNAME')
