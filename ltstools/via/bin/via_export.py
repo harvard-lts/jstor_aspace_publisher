@@ -7,6 +7,7 @@
 # TME  07/09/19  Made project an optional argument
 #                Using SafeLoader with yaml module
 # TME  10/19/22  Runs the complete process now
+# TME  06/26/23  Enabling reporting to Job Monitor once again
 
 #
 # Export modules, set/initialize global variables, grab arguments & check usage
@@ -75,10 +76,11 @@ else:
 def run_main():
 	global notifyJM
 	sendExport = True
+	exitcode   = 0
 	
 	# Create a notify object, this will also set-up logging
-	logFile   = f'{logDir}/{jobCode}.{dateStamp}'
-	notifyJM  = notify('log', jobCode, logFile)
+	logFile  = f'{logDir}/{jobCode}.{dateStamp}'
+	notifyJM = notify('monitor+log', jobCode, logFile)
 
 	# Let the Job Monitor know that the job has started
 	notifyJM.log('pass', jobName, verbose)
@@ -91,7 +93,7 @@ def run_main():
 	else:
 		notifyJM.log('fail', f'Configuration file {confFile} not found', True)
 		notifyJM.report('stopped')
-		quit()
+		return -1
 
 	# Chunk files if export is full
 	#if export == 'full':
@@ -108,16 +110,17 @@ def run_main():
 		if msgFail:	
 			notifyJM.log('fail', msgFail, True)
 			print(msgFail)
-			return -1
+			exitcode = -1
 		if msgWarn:	
 			notifyJM.log('warn', msgWarn, verbose)
 			print(msgWarn)
 		if msgPass: 
 			notifyJM.log('pass', msgPass, verbose)
 			print(msgPass)
-			return 0
+			exitcode = 0
 
 	notifyJM.report('complete')
+	return exitcode
 
 #
 # Sub-routines
