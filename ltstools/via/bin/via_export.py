@@ -8,6 +8,7 @@
 #                Using SafeLoader with yaml module
 # TME  10/19/22  Runs the complete process now
 # TME  06/26/23  Enabling reporting to Job Monitor once again
+# TME  07/05/23  Do not report warning if deletes file is already created
 
 #
 # Export modules, set/initialize global variables, grab arguments & check usage
@@ -318,6 +319,9 @@ def prep_incr_export(configSets, dateStamp):
 				
 			os.remove(tarfileName)
 			notifyJM.log('pass', f'Deleted records packed up in {tarfileName}', verbose)			
+
+		elif os.path.isfile(delExportFile):
+			notifyJM.log('pass', f'{delExportFile} was found', verbose)
 
 		else:
 			notifyJM.log('warn', 'No delete records were exported', True)
